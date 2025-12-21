@@ -45,7 +45,7 @@ EffectShaderBlurLinearDepth::EffectShaderBlurLinearDepth(FBComponent* uiComponen
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool EffectShaderBlurLinearDepth::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderBlurLinearDepth::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
 {
 	if (const PostPersistentData* data = effectContext->GetPostProcessData())
 	{

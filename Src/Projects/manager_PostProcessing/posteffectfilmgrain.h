@@ -59,5 +59,5 @@ private:
 		return false;
 	}
 
-	virtual bool OnCollectUI(IPostEffectContext* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) override;
 };

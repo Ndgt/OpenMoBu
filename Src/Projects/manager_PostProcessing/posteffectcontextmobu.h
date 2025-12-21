@@ -1,5 +1,14 @@
 #pragma once
 
+/**	\file	posteffectcontextmobu.h
+
+Sergei <Neill3d> Solokhin 2025
+
+GitHub page - https://github.com/Neill3d/OpenMoBu
+Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
+
+*/
+
 #include "posteffectcontext.h"
 
 //--- SDK include
@@ -7,175 +16,143 @@
 
 #include <limits>
 #include <ctime>
+#include <stdint.h>
 
 #include "posteffectchain.h"
 #include "shaderpropertystorage.h"
 
+// forward declarations
+class StandardEffectCollection;
+
 // TODO: mark to delete in case context is not in use any more !
+/**
+* effect context, thread-safe
+* implementation class is used to read from UI and build the data
+* interface read methods can be used to read from render thread in a safe manner
+*/
 class PostEffectContextMoBu : public IPostEffectContext
 {
 public:
 
-	PostEffectContextMoBu(FBCamera* cameraIn, 
-		FBComponent* userObjectIn, 
-		PostPersistentData* postProcessDataIn, 
-		FBEvaluateInfo* pEvaluateInfoIn, 
-		const Parameters& parametersIn)
-		: camera(cameraIn)
-		, userObject(userObjectIn)
-		, postProcessData(postProcessDataIn)
-		, pEvaluateInfo(pEvaluateInfoIn)
-	{
-		parameters = parametersIn;
-		PrepareCache();
-	}
+	PostEffectContextMoBu(FBCamera* cameraIn,
+		FBComponent* userObjectIn,
+		PostPersistentData* postProcessDataIn,
+		FBEvaluateInfo* pEvaluateInfoIn,
+		StandardEffectCollection* effectCollectionIn,
+		const Parameters& parametersIn);
 
-	virtual double* GetCameraPosition() const noexcept override { return cameraPosition; }
-	virtual const float* GetCameraPositionF() const noexcept override { return cameraPositionF; }
+	[[nodiscard]] int GetViewWidth() const noexcept;
+	[[nodiscard]] int GetViewHeight() const noexcept;
 
-	virtual float GetCameraNearDistance() const noexcept override { return zNear; }
-	virtual float GetCameraFarDistance() const noexcept override { return zFar; }
+	[[nodiscard]] int GetLocalFrame() const noexcept;
+	[[nodiscard]] double GetSystemTime() const noexcept;
+	[[nodiscard]] double GetLocalTime() const noexcept;
 
-	virtual bool IsCameraOrthogonal() const noexcept override { return isCameraOrtho; }
+	[[nodiscard]] double GetLocalTimeDT() const noexcept;
+	[[nodiscard]] double GetSystemTimeDT() const noexcept;
 
-	virtual double* GetModelViewMatrix() const noexcept override { return modelView; }
-	virtual const float* GetModelViewMatrixF() const noexcept override { return modelViewF; }
-	virtual double* GetProjectionMatrix() const noexcept override { return projection; }
-	virtual const float* GetProjectionMatrixF() const noexcept override { return projectionF; }
-	virtual double* GetModelViewProjMatrix() const noexcept override { return modelViewProj; }
-	virtual const float* GetModelViewProjMatrixF() const noexcept override { return modelViewProjF; }
+	virtual double* GetCameraPosition() const noexcept override;
+	virtual const float* GetCameraPositionF() const noexcept override;
+
+	virtual float GetCameraNearDistance() const noexcept override;
+	virtual float GetCameraFarDistance() const noexcept override;
+
+	virtual bool IsCameraOrthogonal() const noexcept override;
+
+	virtual double* GetModelViewMatrix() const noexcept override;
+	virtual const float* GetModelViewMatrixF() const noexcept override;
+	virtual double* GetProjectionMatrix() const noexcept override;
+	virtual const float* GetProjectionMatrixF() const noexcept override;
+	virtual double* GetModelViewProjMatrix() const noexcept override;
+	virtual const float* GetModelViewProjMatrixF() const noexcept override;
 	// returns the modelview-projection matrix of the previous frame
-	virtual const float* GetPrevModelViewProjMatrixF() const noexcept override { return prevModelViewProjF; }
+	virtual const float* GetPrevModelViewProjMatrixF() const noexcept override;
 	// returns the inverse of the modelview-projection matrix
-	virtual const float* GetInvModelViewProjMatrixF() const noexcept override { return invModelViewProjF; }
+	virtual const float* GetInvModelViewProjMatrixF() const noexcept override;
 	
 	// 4 floats in format - year + 1900, month + 1, day, seconds since midnight
-	virtual const float* GetIDate() const noexcept override { return iDate; }
+	virtual const float* GetIDate() const noexcept override;
 
-	inline FBCamera* GetCamera() const override { return camera; }
-	inline FBComponent* GetComponent() const override { return userObject; }
-	inline PostPersistentData* GetPostProcessData() const override { return postProcessData; }
-	inline FBEvaluateInfo* GetEvaluateInfo() const override { return pEvaluateInfo; }
-	inline const PostEffectChain* GetFXChain() const override { return &effectChain; }
-	inline PostEffectChain* GetFXChain() { return &effectChain; }
-	inline const ShaderPropertyStorage* GetShaderPropertyStorage() const override { return &shaderPropertyStorage; }
-	inline ShaderPropertyStorage* GetShaderPropertyStorage() { return &shaderPropertyStorage; }
+	inline FBCamera* GetCamera() const override;
+	
+	inline StandardEffectCollection* GetEffectCollection() const noexcept;
+	inline PostPersistentData* GetPostProcessData() const override;
+	inline const PostEffectChain* GetFXChain() const override;
+	inline PostEffectChain* GetFXChain();
+	inline const ShaderPropertyStorage* GetShaderPropertyStorage() const override;
+	inline ShaderPropertyStorage* GetShaderPropertyStorage();
 
-	void OverrideComponent(FBComponent* component) const { userObject = component; }
-
-	void UpdateEvaluateInfo(FBEvaluateInfo* pEvaluateInfoIn)
-	{
-		pEvaluateInfo = pEvaluateInfoIn;
-	}
-	void UpdateContextParameters(FBCamera* cameraIn, const Parameters& parametersIn)
-	{
-		camera = cameraIn;
-		parameters = parametersIn;
-		PrepareCache();
-	}
-
+	// evaluate thread to read UI and prepare cache for render
 	void Evaluate(
-		FBEvaluateInfo* pEvaluateInfoIn, 
-		FBCamera* cameraIn, 
-		StandardEffectCollection& standardEffectCollection, 
-		const Parameters& parametersIn)
-	{
-		UpdateEvaluateInfo(pEvaluateInfoIn);
-		UpdateContextParameters(cameraIn, parametersIn);
-		effectChain.Evaluate(standardEffectCollection, this);
-	}
+		FBEvaluateInfo* pEvaluateInfoIn,
+		FBCamera* cameraIn,
+		const Parameters& parametersIn);
 
-	void Synchronize()
-	{
-		effectChain.Synchronize();
-		shaderPropertyStorage.CommitWrite(0);
-	}
+	// synchronize between evaluate and render threads
+	void Synchronize();
 
-	void ChangeContext()
-	{
-		effectChain.ChangeContext();
-	}
+	// notify about graphics context change, clear all hardware resources
+	void ChangeContext();
 
-	bool Prep()
-	{
-		return effectChain.Prep(postProcessData, this);
-	}
 
-	bool Process(PostEffectBuffers* buffers, StandardEffectCollection& standardEffectCollection)
-	{
-		return effectChain.Process(buffers, parameters.localTime, this, standardEffectCollection);
-	}
+	bool IsReadyToRender() const;
+
+	bool Render(FBEvaluateInfo* pEvaluateInfoIn, 
+		PostEffectBuffers* buffers);
 
 private:
 
-	// cache values
+	struct alignas(16) Cache
+	{
+		// playback and viewport parameters
+		Parameters parameters;
 
-	FBMatrix	modelView;
-	FBMatrix	projection;
-	FBMatrix	modelViewProj;
-	FBMatrix	invModelViewProj;
-	FBMatrix	prevModelViewProj;
-	FBVector3d	cameraPosition;
+		// camera matrices and position
 
-	float zNear;
-	float zFar;
+		FBMatrix	modelView;
+		FBMatrix	projection;
+		FBMatrix	modelViewProj;
+		FBMatrix	invModelViewProj;
+		FBMatrix	prevModelViewProj;
+		FBVector3d	cameraPosition;
 
-	float modelViewF[16];	
-	float projectionF[16];
-	float modelViewProjF[16];
-	float invModelViewProjF[16];
-	float prevModelViewProjF[16];
-	float cameraPositionF[3];
-	float iDate[4];
+		mutable FBComponent* userObject{ nullptr }; //!< this is a component where all ui properties are exposed
+		FBCamera* camera{ nullptr }; //!< current camera that we are drawing with
+		
+		float zNear;
+		float zFar;
 
-	FBCamera* camera{ nullptr }; //!< current camera that we are drawing with
-	mutable FBComponent* userObject{ nullptr }; //!< this is a component where all ui properties are exposed
+		float modelViewF[16];
+		float projectionF[16];
+		float modelViewProjF[16];
+		float invModelViewProjF[16];
+		float prevModelViewProjF[16];
+		float cameraPositionF[3];
+		float iDate[4];
+
+		bool isCameraOrtho{ false };
+	};
+
+	Cache mCache[2];
+	std::atomic<uint32_t> mReadIndex{ 0 };
+	
+	// that is a key to the context and have to be the same in any thread	
 	PostPersistentData* postProcessData{ nullptr }; //!< this is a main post process object for common effects properties
-	FBEvaluateInfo* pEvaluateInfo{ nullptr }; //!< evaluate info from the caller thread (evalute, render, etc.)
+	
+	StandardEffectCollection* effectCollection{ nullptr }; //!< standard effects collection to use
 
 	PostEffectChain effectChain; //!< build a chain from a postProcessData
+	
+	// NOTE: this class is already thread-safe, call shaderPropertyStorage.CommitWrite(0);
 	ShaderPropertyStorage shaderPropertyStorage; //!< storage for shader properties
 
 
-	bool isCameraOrtho{ false };
+	const Cache& GetReadCache() const;
+	Cache& GetWriteCache();
+	void SwapCacheIndices();
 
-	void PrepareCache()
-	{
-		if (!camera)
-			return;
+	// update parameters for write cache
+	void UpdateContextParameters(FBCamera* cameraIn, const Parameters& parametersIn);
 
-		zNear = static_cast<float>(camera->NearPlaneDistance);
-		zFar = static_cast<float>(camera->FarPlaneDistance);
-		
-		isCameraOrtho = (camera->Type == FBCameraType::kFBCameraTypeOrthogonal);
-
-		camera->GetVector(cameraPosition, kModelTranslation, true);
-		for (int i = 0; i < 3; ++i)
-			cameraPositionF[i] = static_cast<float>(cameraPosition[i]);
-
-		camera->GetCameraMatrix(modelView, FBCameraMatrixType::kFBModelView);
-		camera->GetCameraMatrix(projection, FBCameraMatrixType::kFBProjection);
-		camera->GetCameraMatrix(modelViewProj, FBCameraMatrixType::kFBModelViewProj);
-		FBMatrixInverse(invModelViewProj, modelViewProj);
-		prevModelViewProj = parameters.prevModelViewProjMatrix;
-
-		for (int i = 0; i < 16; ++i)
-		{
-			modelViewF[i] = static_cast<float>(modelView[i]);
-			projectionF[i] = static_cast<float>(projection[i]);
-			modelViewProjF[i] = static_cast<float>(modelViewProj[i]);
-			invModelViewProjF[i] = static_cast<float>(invModelViewProj[i]);
-			prevModelViewProjF[i] = static_cast<float>(prevModelViewProj[i]);
-		}
-		
-		std::time_t now = std::time(nullptr);
-		std::tm localTime;
-		localtime_s(&localTime, &now);  // now should be of type std::time_t
-
-		const float secondsSinceMidnight = static_cast<float>(localTime.tm_hour * 3600 + localTime.tm_min * 60 + localTime.tm_sec);
-		iDate[0] = static_cast<float>(localTime.tm_year + 1900);
-		iDate[1] = static_cast<float>(localTime.tm_mon + 1);
-		iDate[2] = static_cast<float>(localTime.tm_mday);
-		iDate[3] = secondsSinceMidnight;
-	}
+	void PrepareCache(Cache& cacheOut, FBCamera* camera);
 };

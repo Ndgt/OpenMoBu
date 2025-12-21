@@ -63,5 +63,5 @@ protected:
 	bool DoPopulatePropertiesFromUniforms() const override { return false; }
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	bool OnCollectUI(IPostEffectContext* effectContext, int maskIndex) override;
+	bool OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) override;
 };

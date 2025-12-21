@@ -78,7 +78,7 @@ public:
 	/// @param colorAttachment defines which color attachment of the dstBuffer to render into
 	/// @param inputTextureId defines the input texture to process
 	/// </summary>
-	void Render(const PostEffectRenderContext& renderContext, const IPostEffectContext* effectContext);
+	void Render(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext);
 
 	// number of shaders in properties that are used as sources for this effect
 	int GetNumberOfSourceShaders(const IPostEffectContext* effectContext) const;
@@ -129,9 +129,7 @@ public:
 		const IPostEffectContext* effectContext, bool skipTextureProperties);
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	bool CollectUIValues(IPostEffectContext* effectContext, int maskIndex) override;		//!< grab main UI values for the effect
-
-	bool CollectUIValues(FBComponent* component, IPostEffectContext* effectContext, int maskIndex);
+	bool CollectUIValues(FBComponent* component, FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) override;
 
 	bool ReloadPropertyShaders();
 
@@ -190,13 +188,16 @@ protected:
 	virtual bool DoPopulatePropertiesFromUniforms() const = 0;
 
 	virtual bool OnPrepareUniforms(const int variationIndex) { return true; }
-	virtual bool OnCollectUI(IPostEffectContext* effectContext, int maskIndex) { return true; }
+	virtual bool OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) { return true; }
 	virtual void OnUniformsUploaded(int passIndex) {}
 
 	//! bind effect shader program
 	virtual bool Bind();
 	//! unbind effect shader program
 	virtual void UnBind();
+
+	// we going to render all input connected effect shaders and prepare input connected textures
+	void PreRender(PostEffectRenderContext& renderContextParent, IPostEffectContext* effectContext) const;
 
 	//! derived classes could have own preparation steps before each pass
 	virtual bool OnRenderPassBegin(int passIndex, PostEffectRenderContext& renderContext) { return true; }

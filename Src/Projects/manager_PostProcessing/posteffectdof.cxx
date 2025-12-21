@@ -164,7 +164,7 @@ const char* EffectShaderDOF::GetMaskingChannelPropertyName() const noexcept
 	return PostPersistentData::DOF_MASKING_CHANNEL;
 }
 
-bool EffectShaderDOF::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderDOF::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
 {
 	PostPersistentData* pData = effectContext->GetPostProcessData();
 	if (!pData)
@@ -200,7 +200,7 @@ bool EffectShaderDOF::OnCollectUI(IPostEffectContext* effectContext, int maskInd
 
 		FBModel *pInterest = nullptr;
 		FBCameraFocusDistanceSource cameraFocusDistanceSource;
-		camera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource), effectContext->GetEvaluateInfo());
+		camera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource), evaluateInfo);
 		if (kFBFocusDistanceCameraInterest == cameraFocusDistanceSource)
 			pInterest = camera->Interest;
 		else if (kFBFocusDistanceModel == cameraFocusDistanceSource)

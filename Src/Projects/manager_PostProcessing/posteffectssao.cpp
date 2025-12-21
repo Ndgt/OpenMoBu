@@ -14,6 +14,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postpersistentdata.h"
 #include "shaderpropertystorage.h"
 #include "shaderpropertywriter.h"
+#include "standardeffectcollection.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -27,8 +28,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 PostEffectSSAO::PostEffectSSAO()
 	: PostEffectBase()
 	, mShaderSSAO(std::make_unique<EffectShaderSSAO>(nullptr)) // making it without an owner component
-	, mShaderMix(std::make_unique<EffectShaderMix>(nullptr))
-	, mShaderBlur(std::make_unique<EffectShaderBlurLinearDepth>(nullptr))
+	//, mShaderMix(std::make_unique<EffectShaderMix>(nullptr))
+	//, mShaderBlur(std::make_unique<EffectShaderBlurLinearDepth>(nullptr))
 {
 }
 
@@ -59,7 +60,7 @@ const EffectShaderSSAO* PostEffectSSAO::GetBufferShaderTypedPtr() const
 { 
 	return mShaderSSAO.get(); 
 }
-
+/*
 bool PostEffectSSAO::Load(const char* shaderLocation)
 {
 	if (!mShaderMix->Load(shaderLocation))
@@ -78,8 +79,8 @@ bool PostEffectSSAO::CollectUIValues(IPostEffectContext* effectContext)
 	
 	return PostEffectBase::CollectUIValues(effectContext);
 }
-
-void PostEffectSSAO::Process(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext)
+*/
+void PostEffectSSAO::Render(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext)
 {
 	// render SSAO into its own buffer
 	constexpr const char* ssaoBufferName = "ssao";
@@ -87,6 +88,7 @@ void PostEffectSSAO::Process(PostEffectRenderContext& renderContext, IPostEffect
 
 	const PostPersistentData* postData = effectContext->GetPostProcessData();
 	PostEffectBuffers* buffers = renderContext.buffers;
+	auto effectCollection = effectContext->GetEffectCollection();
 
 	if (!postData->OnlyAO)
 	{
@@ -116,6 +118,8 @@ void PostEffectSSAO::Process(PostEffectRenderContext& renderContext, IPostEffect
 
 		if (doBlur)
 		{
+			auto shaderBlur = effectCollection->GetEffectBlurLinearDepth()->GetBufferShaderTypedPtr();
+
 			PostEffectRenderContext renderContextBlur;
 			renderContextBlur.buffers = buffers;
 			renderContextBlur.targetFramebuffer = pBufferSSAO;
@@ -126,13 +130,15 @@ void PostEffectSSAO::Process(PostEffectRenderContext& renderContext, IPostEffect
 			renderContextBlur.generateMips = false;
 
 			const float color_shift = 0.0f;
-			renderContextBlur.OverrideUniform(*mShaderBlur->mColorShift, color_shift);
-			renderContextBlur.OverrideUniform(*mShaderBlur->mInvRes, 1.0f / static_cast<float>(outWidth), 1.0f / static_cast<float>(outHeight));			
+			renderContextBlur.OverrideUniform(*shaderBlur->mColorShift, color_shift);
+			renderContextBlur.OverrideUniform(*shaderBlur->mInvRes, 1.0f / static_cast<float>(outWidth), 1.0f / static_cast<float>(outHeight));
 
-			mShaderBlur->Render(renderContextBlur, effectContext);
+			shaderBlur->Render(renderContextBlur, effectContext);
 		}
 	
 		// mix SSAO result with the original scene
+		auto shaderMix = effectCollection->GetEffectMix()->GetBufferShaderTypedPtr();
+
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
 		const uint32_t ssaoTextureId = (doBlur) ? pBufferSSAO->GetColorObject(1) : pBufferSSAO->GetColorObject(0);
 		glBindTexture(GL_TEXTURE_2D, ssaoTextureId);
@@ -140,9 +146,9 @@ void PostEffectSSAO::Process(PostEffectRenderContext& renderContext, IPostEffect
 
 		PostEffectRenderContext renderContextMix = renderContext;
 		// disable bloom in mix shader
-		renderContextMix.OverrideUniform(*mShaderMix->mBloom, 0.0f, 0.0f, 0.0f, 0.0f);
+		renderContextMix.OverrideUniform(*shaderMix->mBloom, 0.0f, 0.0f, 0.0f, 0.0f);
 
-		mShaderMix->Render(renderContextMix, effectContext);
+		shaderMix->Render(renderContextMix, effectContext);
 
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -242,7 +248,7 @@ void EffectShaderSSAO::DeleteTextures()
 	}
 }
 
-bool EffectShaderSSAO::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderSSAO::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
 {
 	FBCamera* camera = effectContext->GetCamera();
 	const PostPersistentData* pData = effectContext->GetPostProcessData();

@@ -398,6 +398,24 @@ UserBufferShader::UserBufferShader(EffectShaderUserObject* UserObject)
 {
 }
 
+const char* UserBufferShader::GetName() const
+{
+	if (mUserObject)
+	{
+		return mUserObject->GetFullName();
+	}
+	return SHADER_NAME;
+}
+
+uint32_t UserBufferShader::GetNameHash() const
+{
+	if (mUserObject)
+	{
+		return xxhash32(mUserObject->GetFullName());
+	}
+	return SHADER_NAME_HASH;
+}
+
 /// new feature to have several passes for a specified effect
 int UserBufferShader::GetNumberOfPasses() const
 {
@@ -439,7 +457,7 @@ void UserBufferShader::OnPropertyAdded(ShaderProperty& prop)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool UserBufferShader::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
+bool UserBufferShader::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
 {
 	GLSLShaderProgram* shader = GetShaderPtr();
 	if (!shader)

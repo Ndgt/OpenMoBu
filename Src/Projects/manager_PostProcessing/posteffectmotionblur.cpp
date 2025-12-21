@@ -36,7 +36,7 @@ const char* EffectShaderMotionBlur::GetMaskingChannelPropertyName() const noexce
 	return PostPersistentData::MOTIONBLUR_MASKING_CHANNEL;
 }
 
-bool EffectShaderMotionBlur::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderMotionBlur::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
 {
 	if (!effectContext->GetCamera() || !effectContext->GetPostProcessData())
 		return false;

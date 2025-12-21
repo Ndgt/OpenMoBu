@@ -20,6 +20,7 @@ class PostPersistentData;
 class ScopedEffectBind;
 class EffectShaderUserObject;
 class ShaderPropertyStorage;
+class StandardEffectCollection;
 
 //////////////////////////////
 
@@ -75,14 +76,14 @@ class PostEffectBase
 public:
 
 	//! a constructor
-	PostEffectBase();
+	PostEffectBase() = default;
 	//! a destructor
-	virtual ~PostEffectBase();
+	virtual ~PostEffectBase() = default;
 
 	virtual bool IsActive() const abstract;
 
 	//! an effect public name
-	virtual const char* GetName() const abstract; // { return mName.c_str(); }
+	virtual const char* GetName() const abstract;
 
 	virtual bool Load(const char* shaderLocation);
 
@@ -91,7 +92,7 @@ public:
 	// TODO: should it be a general FBComponent instead of pre-defined PostPersistentData user object ?!
 	// @param effectContext to get access to fx chain, shader property storage
 	//  if we want custom rules to read from UI, we should write into shader property storage
-	virtual bool CollectUIValues(IPostEffectContext* effectContext);
+	virtual bool CollectUIValues(IPostEffectContext* effectContext, FBEvaluateInfo* evaluateInfo);
 
 	// TODO: mask index is like a pre-defined input connection
 	//! define internal mask channel index or -1 for default, it comes from a user input (UI)
@@ -106,7 +107,7 @@ public:
 
 	// render context can be modified to provide next free user texture slot
 	// effect context can be modified by updating shader property texture slot values
-	virtual void Process(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext);
+	virtual void Render(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext);
 
 	bool HasAnySourceShaders(const IPostEffectContext* effectContext) const;
 	bool HasAnySourceTextures(const IPostEffectContext* effectContext) const;

@@ -34,17 +34,17 @@ public:
 	EffectShaderColor* GetBufferShaderTypedPtr();
 	const EffectShaderColor* GetBufferShaderTypedPtr() const;
 
-	virtual bool Load(const char* shaderLocation) override;
+	//virtual bool Load(const char* shaderLocation) override;
 
-	virtual bool CollectUIValues(IPostEffectContext* effectContext) override;
+	//virtual bool CollectUIValues(IPostEffectContext* effectContext) override;
 
-	virtual void Process(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext) override;
+	virtual void Render(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext) override;
 
 protected:
 
 	std::unique_ptr<EffectShaderColor>		mShaderColor;
-	std::unique_ptr<EffectShaderMix>		mShaderMix;
-	std::unique_ptr<EffectShaderBlurLinearDepth> mShaderBlur;
+	//std::unique_ptr<EffectShaderMix>		mShaderMix;
+	//std::unique_ptr<EffectShaderBlurLinearDepth> mShaderBlur;
 };
 
 
@@ -84,5 +84,5 @@ protected:
 	// this is a predefined effect shader, properties are defined manually
 	bool DoPopulatePropertiesFromUniforms() const override { return false;  }
 
-	virtual bool OnCollectUI(IPostEffectContext* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) override;
 };

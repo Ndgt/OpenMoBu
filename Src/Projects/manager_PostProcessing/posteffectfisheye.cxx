@@ -51,7 +51,7 @@ const char* EffectShaderFishEye::GetMaskingChannelPropertyName() const noexcept
 	return PostPersistentData::FISHEYE_MASKING_CHANNEL;
 }
 
-bool EffectShaderFishEye::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderFishEye::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
 {
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
 	if (!pData)

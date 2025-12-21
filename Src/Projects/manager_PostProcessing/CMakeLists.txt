@@ -78,6 +78,7 @@ set (POSTEFFECTSCOMMON
     posteffectbase.h
     posteffectbase.cxx
     posteffectcontext.h
+    posteffectcontextmobu.cpp
     posteffectcontextmobu.h
     posteffectbuffershader.h
     posteffectbuffershader.cxx

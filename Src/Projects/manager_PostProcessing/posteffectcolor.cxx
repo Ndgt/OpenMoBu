@@ -15,6 +15,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectbuffers.h"
 #include "postpersistentdata.h"
 #include "shaderpropertywriter.h"
+#include "standardeffectcollection.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -28,8 +29,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 PostEffectColor::PostEffectColor()
 	: PostEffectBase()
 	, mShaderColor(std::make_unique<EffectShaderColor>(nullptr)) // making it without an owner component
-	, mShaderMix(std::make_unique<EffectShaderMix>(nullptr))
-	, mShaderBlur(std::make_unique<EffectShaderBlurLinearDepth>(nullptr))
+	//, mShaderMix(std::make_unique<EffectShaderMix>(nullptr))
+	//, mShaderBlur(std::make_unique<EffectShaderBlurLinearDepth>(nullptr))
 {
 }
 
@@ -60,7 +61,7 @@ const EffectShaderColor* PostEffectColor::GetBufferShaderTypedPtr() const
 {
 	return mShaderColor.get();
 }
-
+/*
 bool PostEffectColor::Load(const char* shaderLocation)
 {
 	if (!mShaderMix->Load(shaderLocation))
@@ -78,8 +79,8 @@ bool PostEffectColor::CollectUIValues(IPostEffectContext* effectContext)
 
 	return PostEffectBase::CollectUIValues(effectContext);
 }
-
-void PostEffectColor::Process(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext)
+*/
+void PostEffectColor::Render(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext)
 {
 	// render SSAO into its own buffer
 	constexpr const char* bufferName = "color_correction";
@@ -87,6 +88,7 @@ void PostEffectColor::Process(PostEffectRenderContext& renderContext, IPostEffec
 
 	const PostPersistentData* postData = effectContext->GetPostProcessData();
 	PostEffectBuffers* buffers = renderContext.buffers;
+	auto effectCollection = effectContext->GetEffectCollection();
 
 	if (postData && buffers && postData->Bloom)
 	{
@@ -114,6 +116,8 @@ void PostEffectColor::Process(PostEffectRenderContext& renderContext, IPostEffec
 		mShaderColor->Render(renderContextColor, effectContext);
 		
 		{
+			auto shaderBlur = effectCollection->GetEffectBlurLinearDepth()->GetBufferShaderTypedPtr();
+
 			PostEffectRenderContext renderContextBlur;
 			renderContextBlur.buffers = buffers;
 			renderContextBlur.targetFramebuffer = pBuffer;
@@ -124,19 +128,21 @@ void PostEffectColor::Process(PostEffectRenderContext& renderContext, IPostEffec
 			renderContextBlur.generateMips = false;
 
 			const float color_shift = (postData->Bloom) ? static_cast<float>(0.01 * postData->BloomMinBright) : 0.0f;
-			renderContextBlur.OverrideUniform(*mShaderBlur->mColorShift, color_shift);
-			renderContextBlur.OverrideUniform(*mShaderBlur->mInvRes, 1.0f / static_cast<float>(outWidth), 1.0f / static_cast<float>(outHeight));
+			renderContextBlur.OverrideUniform(*shaderBlur->mColorShift, color_shift);
+			renderContextBlur.OverrideUniform(*shaderBlur->mInvRes, 1.0f / static_cast<float>(outWidth), 1.0f / static_cast<float>(outHeight));
 
-			mShaderBlur->Render(renderContextBlur, effectContext);
+			shaderBlur->Render(renderContextBlur, effectContext);
 		}
 		
 		// mix src texture with color corrected image
+		const auto shaderMix = effectCollection->GetEffectMix()->GetBufferShaderTypedPtr();
+
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
 		const uint32_t ccTextureId = pBuffer->GetColorObject(0);
 		glBindTexture(GL_TEXTURE_2D, ccTextureId);
 		glActiveTexture(GL_TEXTURE0);
 
-		mShaderMix->Render(renderContext, effectContext);
+		shaderMix->Render(renderContext, effectContext);
 
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -146,7 +152,7 @@ void PostEffectColor::Process(PostEffectRenderContext& renderContext, IPostEffec
 	}
 	else
 	{
-		PostEffectBase::Process(renderContext, effectContext);
+		PostEffectBase::Render(renderContext, effectContext);
 	}
 }
 
@@ -185,7 +191,7 @@ const char* EffectShaderColor::GetMaskingChannelPropertyName() const noexcept
 	return PostPersistentData::COLOR_MASKING_CHANNEL;
 }
 
-bool EffectShaderColor::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderColor::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
 {
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
 	if (!pData)

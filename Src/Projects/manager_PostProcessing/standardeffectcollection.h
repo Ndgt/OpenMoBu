@@ -55,8 +55,14 @@ public:
 
 	PostEffectBase* ShaderFactory(const BuildInEffect effectType, const char* shadersLocation, bool immediatelyLoad = true);
 
+	const PostEffectBlurLinearDepth* GetEffectBlurLinearDepth() const { return mEffectBlur.get(); }
+	PostEffectBlurLinearDepth* GetEffectBlurLinearDepth() { return mEffectBlur.get(); }
+	const PostEffectMix* GetEffectMix() const { return mEffectMix.get(); }
+	PostEffectMix* GetEffectMix() { return mEffectMix.get(); }
+
 	void ChangeContext();
-	bool Prep(PostPersistentData* pData);
+	// check reload of shaders was requested, then reload them
+	bool PreparationToRender();
 
 	bool LoadShaders();
 	void FreeShaders();

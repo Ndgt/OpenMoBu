@@ -36,17 +36,17 @@ public:
 	EffectShaderSSAO* GetBufferShaderTypedPtr();
 	const EffectShaderSSAO* GetBufferShaderTypedPtr() const;
 
-	virtual bool Load(const char* shaderLocation) override;
+	//virtual bool Load(const char* shaderLocation) override;
 
-	virtual bool CollectUIValues(IPostEffectContext* effectContext) override;
+	//virtual bool CollectUIValues(IPostEffectContext* effectContext) override;
 
-	virtual void Process(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext) override;
+	virtual void Render(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext) override;
 
 protected:
 
 	std::unique_ptr<EffectShaderSSAO>		mShaderSSAO;
-	std::unique_ptr<EffectShaderMix>		mShaderMix;
-	std::unique_ptr<EffectShaderBlurLinearDepth> mShaderBlur;
+	//std::unique_ptr<EffectShaderMix>		mShaderMix;
+	//std::unique_ptr<EffectShaderBlurLinearDepth> mShaderBlur;
 };
 
 /// <summary>
@@ -82,7 +82,7 @@ protected:
 		return false;
 	}
 
-	virtual bool OnCollectUI(IPostEffectContext* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) override;
 
 	//! bind effect shader program
 	bool Bind() override;

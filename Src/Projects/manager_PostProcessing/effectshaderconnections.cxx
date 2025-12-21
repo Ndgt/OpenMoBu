@@ -10,8 +10,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Class declaration
 #include "effectshaderconnections.h"
-#include "mobu_logging.h"
 #include "hashUtils.h"
+#include "mobu_logging.h"
 #include "posteffect_shader_userobject.h"
 #include "posteffectcontextmobu.h"
 
@@ -250,13 +250,12 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(
 	ShaderPropertyValue& value, 
 	const ShaderProperty& shaderProperty, 
 	const IPostEffectContext* effectContext, 
+	FBEvaluateInfo* evaluateInfo,
 	int maskIndex)
 {
 	FBProperty* fbProperty = shaderProperty.fbProperty;
 	if (fbProperty == nullptr)
 		return;
-
-	assert(value.type == shaderProperty.type);
 
 	double v[4]{ 0.0 };
 	const FBPropertyType fbType = fbProperty->GetPropertyType();
@@ -265,39 +264,41 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(
 	{
 	case FBPropertyType::kFBPT_int:
 	{
-		assert(value.type == IEffectShaderConnections::EPropertyType::INT);
+		VERIFY(value.GetType() == IEffectShaderConnections::EPropertyType::INT);
 		int ivalue = 0;
-		fbProperty->GetData(&ivalue, sizeof(int), effectContext->GetEvaluateInfo());
+		fbProperty->GetData(&ivalue, sizeof(int), evaluateInfo); // effectContext->GetEvaluateInfo()
 		value.SetValue(ivalue);
 	} break;
 
 	case FBPropertyType::kFBPT_bool:
 	{
-		assert(value.type == IEffectShaderConnections::EPropertyType::BOOL);
+		VERIFY((value.GetType() == IEffectShaderConnections::EPropertyType::BOOL)
+			|| (value.GetType() == IEffectShaderConnections::EPropertyType::FLOAT));
+
 		bool bvalue = false;
-		fbProperty->GetData(&bvalue, sizeof(bool), effectContext->GetEvaluateInfo());
+		fbProperty->GetData(&bvalue, sizeof(bool), evaluateInfo);
 		value.SetValue(bvalue);
 	} break;
 
 	case FBPropertyType::kFBPT_double:
 	{
-		assert(value.type == IEffectShaderConnections::EPropertyType::FLOAT);
-		fbProperty->GetData(v, sizeof(double), effectContext->GetEvaluateInfo());
+		VERIFY(value.GetType() == IEffectShaderConnections::EPropertyType::FLOAT);
+		fbProperty->GetData(v, sizeof(double), evaluateInfo);
 		value.SetValue(v[0]);
 	} break;
 
 	case FBPropertyType::kFBPT_float:
 	{
-		assert(value.type == IEffectShaderConnections::EPropertyType::FLOAT);
+		VERIFY(value.GetType() == IEffectShaderConnections::EPropertyType::FLOAT);
 		float fvalue = 0.0f;
-		fbProperty->GetData(&fvalue, sizeof(float), effectContext->GetEvaluateInfo());
+		fbProperty->GetData(&fvalue, sizeof(float), evaluateInfo);
 		value.SetValue(fvalue);
 	} break;
 
 	case FBPropertyType::kFBPT_Vector2D:
 	{
-		assert(value.type == IEffectShaderConnections::EPropertyType::VEC2);
-		fbProperty->GetData(v, sizeof(double) * 2, effectContext->GetEvaluateInfo());
+		VERIFY(value.GetType() == IEffectShaderConnections::EPropertyType::VEC2);
+		fbProperty->GetData(v, sizeof(double) * 2, evaluateInfo);
 		value.SetValue(static_cast<float>(v[0]), static_cast<float>(v[1]));
 	} break;
 
@@ -306,18 +307,18 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(
 	{
 		if (!shaderProperty.HasFlag(IEffectShaderConnections::PropertyFlag::ConvertWorldToScreenSpace))
 		{
-			assert(value.type == IEffectShaderConnections::EPropertyType::VEC3);
-			fbProperty->GetData(v, sizeof(double) * 3, effectContext->GetEvaluateInfo());
+			VERIFY(value.GetType() == IEffectShaderConnections::EPropertyType::VEC3);
+			fbProperty->GetData(v, sizeof(double) * 3, evaluateInfo);
 			value.SetValue(static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]));
 		}
 		else
 		{
-			assert(effectContext != nullptr);
+			VERIFY(effectContext != nullptr);
 			// convert world to screen shape, output VEC2
-			assert(value.type == IEffectShaderConnections::EPropertyType::VEC2);
+			VERIFY(value.GetType() == IEffectShaderConnections::EPropertyType::VEC2);
 
 			// world space to screen space
-			fbProperty->GetData(v, sizeof(double) * 3, effectContext->GetEvaluateInfo());
+			fbProperty->GetData(v, sizeof(double) * 3, evaluateInfo);
 
 			const FBMatrix mvp(effectContext->GetModelViewProjMatrix());
 
@@ -336,8 +337,8 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(
 	case FBPropertyType::kFBPT_Vector4D:
 	case FBPropertyType::kFBPT_ColorRGBA:
 	{
-		assert(value.type == IEffectShaderConnections::EPropertyType::VEC4);
-		fbProperty->GetData(v, sizeof(double) * 4, effectContext->GetEvaluateInfo());
+		VERIFY(value.GetType() == IEffectShaderConnections::EPropertyType::VEC4);
+		fbProperty->GetData(v, sizeof(double) * 4, evaluateInfo);
 		value.SetValue(static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]));
 	} break;
 

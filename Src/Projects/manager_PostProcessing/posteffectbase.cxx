@@ -13,6 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postpersistentdata.h"
 #include "posteffectbuffers.h"
 #include "shaderpropertystorage.h"
+#include "standardeffectcollection.h"
 #include "mobu_logging.h"
 
 #include "posteffect_shader_userobject.h"
@@ -21,14 +22,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <ctime>
 #include <hashUtils.h>
 
-/////////////////////////////////////////////////////////////////////////
-// EffectBase
-
-PostEffectBase::PostEffectBase()
-{}
-
-PostEffectBase::~PostEffectBase()
-{}
 
 bool PostEffectBase::Load(const char* shadersLocation)
 {
@@ -99,21 +92,17 @@ bool PostEffectBase::IsWorldNormalSamplerUsed() const
 	return false;
 }
 
-bool PostEffectBase::CollectUIValues(IPostEffectContext* effectContext)
+bool PostEffectBase::CollectUIValues(IPostEffectContext* effectContext, FBEvaluateInfo* evaluateInfo)
 {
 	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
 	{
 		if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
 		{
-			FBComponent* tempComponent = effectContext->GetComponent();
-			effectContext->OverrideComponent(bufferShader->GetOwner());
-
-			bool status = bufferShader->CollectUIValues(effectContext, GetMaskIndex());
-
-			effectContext->OverrideComponent(tempComponent);
-
-			if (!status)
+			FBComponent* effectComponent = bufferShader->GetOwner() ? bufferShader->GetOwner() : effectContext->GetPostProcessData();
+			if (!bufferShader->CollectUIValues(effectComponent, evaluateInfo, effectContext, GetMaskIndex()))
+			{
 				return false;
+			}
 		}
 	}
 
@@ -180,7 +169,6 @@ bool PostEffectBase::PreProcessSourceShaders(PostEffectRenderContext& renderCont
 		renderContext.targetFramebuffer = buffer;
 		renderContext.colorAttachment = 0;
 		
-		
 		bufferShader->Render(renderContext, effectContext);
 
 		const GLuint bufferTextureId = buffer->GetColorObject();
@@ -203,8 +191,6 @@ bool PostEffectBase::PreProcessSourceShaders(PostEffectRenderContext& renderCont
 
 bool PostEffectBase::PreProcessSourceTextures(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext) const
 {
-	//GLint userTextureSlot = CommonEffect::UserSamplerSlot; //!< start index to bind user textures
-
 	const int mainBufferShader = GetNumberOfBufferShaders() - 1;
 	const PostEffectBufferShader* bufferShader = GetBufferShaderPtr(mainBufferShader);
 	if (!bufferShader)
@@ -216,6 +202,8 @@ bool PostEffectBase::PreProcessSourceTextures(PostEffectRenderContext& renderCon
 	for (IEffectShaderConnections::ShaderPropertyValue* propValue : sourceTextures)
 	{
 		FBTexture* texture = propValue->texture;
+		if (!texture)
+			continue;
 
 		int textureId = texture->TextureOGLId;
 		if (textureId == 0)
@@ -242,7 +230,7 @@ bool PostEffectBase::PreProcessSourceTextures(PostEffectRenderContext& renderCon
 	return true;
 }
 
-void PostEffectBase::Process(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext)
+void PostEffectBase::Render(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext)
 {
 	if (GetNumberOfBufferShaders() == 0)
 		return;
@@ -273,17 +261,7 @@ void PostEffectBase::Process(PostEffectRenderContext& renderContext, IPostEffect
 		}
 	}
 	*/
-
-	if (HasAnySourceShaders(effectContext))
-	{
-		PreProcessSourceShaders(renderContext, effectContext);
-	}
-
-	if (HasAnySourceTextures(effectContext))
-	{
-		PreProcessSourceTextures(renderContext, effectContext);
-	}
-
+	
 	// main buffer shader is a last shader in the list, it have to output directly to the chain effects
 	const int mainBufferShader = GetNumberOfBufferShaders() - 1;
 	if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(mainBufferShader))

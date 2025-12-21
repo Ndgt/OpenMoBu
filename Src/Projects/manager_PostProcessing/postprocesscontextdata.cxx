@@ -106,13 +106,13 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEva
         if (iter == end(mPostFXContextsMap))
         {
             // create new context
-            auto effectContext = new PostEffectContextMoBu(pCamera, nullptr, pane.data, pEvaluteInfoIn, contextParameters);
+            auto effectContext = new PostEffectContextMoBu(pCamera, nullptr, pane.data, pEvaluteInfoIn, &standardEffectsCollection, contextParameters);
             mPostFXContextsMap.emplace(pane.data, effectContext);
             iter = mPostFXContextsMap.find(pane.data);
 		}
 
 		PostEffectContextMoBu* fxContext = iter->second.get();
-		fxContext->Evaluate(pEvaluteInfoIn, pCamera, standardEffectsCollection, contextParameters);
+		fxContext->Evaluate(pEvaluteInfoIn, pCamera, contextParameters);
     }
 }
 
@@ -329,9 +329,6 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
                 contextParameters.w = localViewport[2];
                 contextParameters.h = localViewport[3];
 
-				fxContext->UpdateEvaluateInfo(pEvaluateInfoIn);
-				fxContext->UpdateContextParameters(pCamera, contextParameters);
-                
                 if (!isReadyToEvaluate && pane.data->IsNeedToReloadShaders())
                 {
                     standardEffectsCollection.ChangeContext();
@@ -340,10 +337,10 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
                 }
 
                 bool isReadyToRender = true;
-                isReadyToRender &= standardEffectsCollection.Prep(pane.data);
-                isReadyToRender &= fxContext->Prep();
+                isReadyToRender &= standardEffectsCollection.PreparationToRender();
+                isReadyToRender &= fxContext->IsReadyToRender();
 
-                if (isReadyToRender && fxContext->Process(currBuffers, standardEffectsCollection))
+                if (isReadyToRender && fxContext->Render(pEvaluateInfoIn, currBuffers))
                 {
                     CHECK_GL_ERROR();
 

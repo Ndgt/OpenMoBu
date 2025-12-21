@@ -71,7 +71,7 @@ const char* EffectShaderLensFlare::GetMaskingChannelPropertyName() const noexcep
 	return PostPersistentData::FLARE_MASKING_CHANNEL;
 }
 
-bool EffectShaderLensFlare::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderLensFlare::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
 {
 	PostPersistentData* data = effectContext->GetPostProcessData();
 	if (!data)
@@ -101,7 +101,7 @@ bool EffectShaderLensFlare::OnCollectUI(IPostEffectContext* effectContext, int m
 	
 	effectContext->GetShaderPropertyStorage()->WriteValue(GetNameHash(), *mTime, flareTimer);
 	
-	return subShaders[mCurrentShader].CollectUIValues(mCurrentShader, effectContext, maskIndex);
+	return subShaders[mCurrentShader].CollectUIValues(mCurrentShader, evaluateInfo, effectContext, maskIndex);
 }
 
 int EffectShaderLensFlare::GetNumberOfPasses() const
@@ -135,7 +135,7 @@ void EffectShaderLensFlare::SubShader::Init()
 	m_NumberOfPasses = 1;
 }
 
-bool EffectShaderLensFlare::SubShader::CollectUIValues(int shaderIndex, IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderLensFlare::SubShader::CollectUIValues(int shaderIndex, FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
 {
 	PostPersistentData* pData = effectContext->GetPostProcessData();
 
@@ -147,7 +147,7 @@ bool EffectShaderLensFlare::SubShader::CollectUIValues(int shaderIndex, IPostEff
 
 	if (pData->UseFlareLightObject && pData->FlareLight.GetCount() > 0)
 	{
-		ProcessLightObjects(effectContext, pData, effectContext->GetCamera(), effectContext->GetViewWidth(), effectContext->GetViewHeight(), 
+		ProcessLightObjects(evaluateInfo, effectContext, pData, effectContext->GetCamera(), effectContext->GetViewWidth(), effectContext->GetViewHeight(), 
 			effectContext->GetSystemTimeDT(), effectContext->GetSystemTime(), flarePos);
 	}
 	else
@@ -160,7 +160,7 @@ bool EffectShaderLensFlare::SubShader::CollectUIValues(int shaderIndex, IPostEff
 	return true;
 }
 
-void EffectShaderLensFlare::SubShader::ProcessLightObjects(IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos)
+void EffectShaderLensFlare::SubShader::ProcessLightObjects(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos)
 {
 	m_NumberOfPasses = pData->FlareLight.GetCount();
 	m_LightPositions.resize(m_NumberOfPasses);
@@ -172,7 +172,7 @@ void EffectShaderLensFlare::SubShader::ProcessLightObjects(IPostEffectContext* e
 
 	for (int i = 0; i < m_NumberOfPasses; ++i)
 	{
-		ProcessSingleLight(effectContext, pData, pCamera, mvp, i, w, h, dt, flarePos);
+		ProcessSingleLight(evaluateInfo, effectContext, pData, pCamera, mvp, i, w, h, dt, flarePos);
 	}
 
 	// relative coords to a screen size
@@ -180,7 +180,7 @@ void EffectShaderLensFlare::SubShader::ProcessLightObjects(IPostEffectContext* e
 	pData->FlarePosY = 100.0 * flarePos[1];
 }
 
-void EffectShaderLensFlare::SubShader::ProcessSingleLight(IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos)
+void EffectShaderLensFlare::SubShader::ProcessSingleLight(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos)
 {
 	FBLight* pLight = static_cast<FBLight*>(pData->FlareLight.GetAt(index));
 
@@ -237,7 +237,7 @@ void EffectShaderLensFlare::SubShader::ProcessSingleLight(IPostEffectContext* ef
 
 	float alpha = m_LightAlpha[index];
 	double occSpeed = 100.0;
-	pData->FlareOcclusionSpeed.GetData(&occSpeed, sizeof(double), effectContext->GetEvaluateInfo());
+	pData->FlareOcclusionSpeed.GetData(&occSpeed, sizeof(double), evaluateInfo);
 	alpha += static_cast<float>(occSpeed) * ((isFading) ? -dt : dt);
 	alpha = clamp01(alpha);
 

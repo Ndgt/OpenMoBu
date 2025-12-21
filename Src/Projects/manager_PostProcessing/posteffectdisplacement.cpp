@@ -52,7 +52,7 @@ const char* EffectShaderDisplacement::GetMaskingChannelPropertyName() const noex
 	return PostPersistentData::DISP_MASKING_CHANNEL;
 }
 
-bool EffectShaderDisplacement::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderDisplacement::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
 {
 	const PostPersistentData* postProcess = effectContext->GetPostProcessData();
 	if (!postProcess)

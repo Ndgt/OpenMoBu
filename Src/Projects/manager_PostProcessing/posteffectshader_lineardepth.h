@@ -58,5 +58,5 @@ protected:
 	}
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool OnCollectUI(IPostEffectContext* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) override;
 };

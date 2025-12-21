@@ -40,26 +40,26 @@ class PostEffectContextMoBu;
 class PostEffectChain
 {
 public:
-	PostEffectChain();
+	PostEffectChain(PostPersistentData* pData);
 	virtual ~PostEffectChain() = default;
 
-	void Evaluate(StandardEffectCollection& effectCollection, PostEffectContextMoBu* effectContext);
+	void Evaluate(PostEffectContextMoBu* effectContext, FBEvaluateInfo* evaluateInfo, FBCamera* cameraIn);
 	void Synchronize();
 
 	void ChangeContext();
 	/// w,h - local buffer size for processing, pCamera - current pane camera for processing
-	bool Prep(PostPersistentData *pData, const PostEffectContextMoBu* effectContext);
+	bool IsReadyToRender() const;
 
 	bool BeginFrame(PostEffectBuffers* buffers);
 
 	/// <summary>
 	/// render each effect with a defined order
 	/// </summary>
-	bool Process(
+	bool Render(
 		PostEffectBuffers* buffers, 
 		double systemTime, 
-		PostEffectContextMoBu* effectContext, 
-		const StandardEffectCollection& effectCollection);
+		PostEffectContextMoBu* effectContext,
+		FBEvaluateInfo* evaluateInfo);
 
 	bool IsCompressedDataReady() const
 	{
@@ -91,9 +91,15 @@ protected:
 		bool isDepthSamplerBinded = false;
 		bool isLinearDepthSamplerBinded = false;
 		bool isWorldNormalSamplerBinded = false;
+
+		void Reset()
+		{
+			isReady = false;
+			mChain.clear();
+		}
 	};
 
-	RenderData								mRenderData[2]; // double buffered from evaluation thread
+	std::array<RenderData, 2> mRenderData; // thread-safe double buffered from evaluation thread
 
 	// 0 or 1, which buffer is currently “active”
 	std::atomic<uint8_t>					gActiveData{ 0 };
@@ -133,20 +139,32 @@ private:
 	/// @param effect with a shader to render a linear depth
 	/// @param makeDownscale - if true, the depth will be downscaled to half-size
 	/// </summary>
-	void RenderLinearDepth(PostEffectBuffers* buffers, PostEffectBase* effect, const GLuint depthId, bool makeDownscale, PostEffectContextMoBu& effectContext);
+	void RenderLinearDepth(PostEffectBuffers* buffers, 
+		PostEffectBase* effect, 
+		const GLuint depthId, 
+		bool makeDownscale, 
+		PostEffectContextMoBu& effectContext,
+		FBEvaluateInfo* evaluateInfo);
 
 	void RenderWorldNormals(PostEffectBuffers* buffers);
 
 	/// <summary>
 	/// when a blur is used in any of masks
 	/// </summary>
-	void BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers, PostEffectBilateralBlur* effect, PostEffectContextMoBu& effectContext);
+	void BlurMasksPass(const int maskIndex, 
+		PostEffectBuffers* buffers, 
+		PostEffectBilateralBlur* effect, 
+		PostEffectContextMoBu& effectContext);
 
 	/// <summary>
 	/// mix masks = mask A * mask B
 	///  result is written back to mask A color attachment
 	/// </summary>
-	void MixMasksPass(PostEffectMix* shader, const int maskindex, const int maskIndex2, PostEffectBuffers* buffers, PostEffectContextMoBu& effectContext);
+	void MixMasksPass(PostEffectMix* shader, 
+		const int maskindex, 
+		const int maskIndex2, 
+		PostEffectBuffers* buffers, 
+		PostEffectContextMoBu& effectContext);
 
 	/// <summary>
 	/// send a packet with final post processed image

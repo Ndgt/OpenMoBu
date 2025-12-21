@@ -256,6 +256,7 @@ public:
 			ShaderPropertyValue& value, 
 			const ShaderProperty& shaderProperty, 
 			const IPostEffectContext* effectContext, 
+			FBEvaluateInfo* evaluateInfo,
 			int maskIndex);
 		
 		// when shader property comes from FBPropertyListObject
@@ -292,7 +293,7 @@ public:
 	
 	// look for a UI interface, and read properties and its values
 	// we should write values into effectContext's shaderPropertyStorage
-	virtual bool CollectUIValues(IPostEffectContext* effectContext, int maskIndex) = 0;
+	virtual bool CollectUIValues(FBComponent* componentIn, FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) = 0;
 
 	// use uniformName to track down some type casts
 	static FBPropertyType ShaderPropertyToFBPropertyType(const ShaderProperty& prop);

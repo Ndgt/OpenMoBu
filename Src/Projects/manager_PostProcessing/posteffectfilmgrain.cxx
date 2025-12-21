@@ -59,7 +59,7 @@ const char* EffectShaderFilmGrain::GetMaskingChannelPropertyName() const noexcep
 	return PostPersistentData::GRAIN_MASKING_CHANNEL;
 }
 
-bool EffectShaderFilmGrain::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderFilmGrain::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
 {
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
 	if (!pData)
