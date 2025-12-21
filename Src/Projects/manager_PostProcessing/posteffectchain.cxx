@@ -665,7 +665,7 @@ bool PostEffectChain::Render(
 		}
 	}
 	
-	// 4a. blur masks (if applied)
+	// 3a. blur masks (if applied)
 
 	if (data.isMaskBlurRequested)
 	{
@@ -678,7 +678,7 @@ bool PostEffectChain::Render(
 		}
 	}
 
-	// 4b. mix masks (if applied)
+	// 3b. mix masks (if applied)
 	if (data.isMaskMixRequested)
 	{
 		for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
@@ -731,7 +731,7 @@ bool PostEffectChain::Render(
 		glActiveTexture(GL_TEXTURE0);
 	}
 
-	// 3. in case of SSAO active, render a linear depth texture
+	// 6. in case of SSAO active, render a linear depth texture
 
 	if (data.isLinearDepthSamplerBinded)
 	{

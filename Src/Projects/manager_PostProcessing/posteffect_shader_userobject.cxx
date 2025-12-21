@@ -139,7 +139,7 @@ bool EffectShaderUserObject::DoReloadShaders()
 	const char* fragment_shader_rpath = ShaderFile;
 	if (!fragment_shader_rpath || strlen(fragment_shader_rpath) < 2)
 	{
-		LOGE("[PostEffectUserObject] Fragment shader relative path is not defined!\n");
+		LOGE("[%s] Shader File property is empty!\n", LongName.AsString());
 		return false;
 	}
 
@@ -150,20 +150,21 @@ bool EffectShaderUserObject::DoReloadShaders()
 	if (!FindEffectLocation(vertex_shader_rpath, vertex_abs_path_only, MAX_PATH)
 		|| !FindEffectLocation(fragment_shader_rpath, fragment_abs_path_only, MAX_PATH))
 	{
-		LOGE("[PostEffectUserObject] Failed to find shaders location!\n");
+		LOGE("[%s] Failed to find shaders location for %s, %s!\n", LongName.AsString(), vertex_shader_rpath, fragment_shader_rpath);
 		return false;
 	}
 
-	LOGI("[PostEffectUserObject] Vertex shader Location - %s\n", vertex_abs_path_only);
-	LOGI("[PostEffectUserObject] Fragment shader Location - %s\n", fragment_abs_path_only);
+	LOGI("[%s] Vertex shader Location - %s\n", LongName.AsString(), vertex_abs_path_only);
+	LOGI("[%s] Fragment shader Location - %s\n", LongName.AsString(), fragment_abs_path_only);
 
 	FBString vertex_path(vertex_abs_path_only, vertex_shader_rpath);
 	FBString fragment_path(fragment_abs_path_only, fragment_shader_rpath);
 
 	// NOTE: prep uniforms when load is succesfull
-	if (!mUserShader->Load(0, vertex_path, fragment_path))
+	constexpr int variationIndex = 0;
+	if (!mUserShader->Load(variationIndex, vertex_path, fragment_path))
 	{
-		LOGE("[PostEffectUserObject] Failed to load shaders!\n");
+		LOGE("[%s] Failed to load shaders for %s, %s!\n", LongName.AsString(), vertex_path, fragment_path);
 		return false;
 	}
 	
@@ -230,21 +231,21 @@ bool EffectShaderUserObject::DoOpenFolderWithShader()
 	const char* fragment_shader_rpath = ShaderFile;
 	if (!fragment_shader_rpath || strlen(fragment_shader_rpath) < 2)
 	{
-		LOGE("[PostEffectUserObject] Fragment shader relative path is not defined!\n");
+		LOGE("[%s] Shader File property is empty!\n", LongName.AsString());
 		return false;
 	}
 
 	char fragment_abs_path_only[MAX_PATH];
 	if (!FindEffectLocation(fragment_shader_rpath, fragment_abs_path_only, MAX_PATH))
 	{
-		LOGE("[PostEffectUserObject] Failed to find shaders location!\n");
+		LOGE("[%s] Failed to find shaders location for relative path %s!\n", LongName.AsString(), fragment_shader_rpath);
 		return false;
 	}
 
 	const std::filesystem::path shaderPath = ComputeFullShaderPath(fragment_shader_rpath, fragment_abs_path_only);
 
 	if (!OpenExplorerFolder(shaderPath)) {
-		LOGE("Failed to open folder for %s\n", fragment_abs_path_only);
+		LOGE("[%s] Failed to open folder for %s\n", LongName.AsString(), fragment_abs_path_only);
 		return false;
 	}
 
@@ -381,7 +382,7 @@ FBProperty* EffectShaderUserObject::GetOrMakeProperty(const UserBufferShader::Sh
 			fbProperty = MakePropertySampler(prop);
 			break;
 		default:
-			LOGE("[PostEffectUserObject] not supported prop type for %s uniform\n", prop.GetName());
+			LOGE("[%s] not supported prop type for %s uniform\n", LongName.AsString(), prop.GetName());
 		}
 	}
 	return fbProperty;
@@ -459,14 +460,7 @@ void UserBufferShader::OnPropertyAdded(ShaderProperty& prop)
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 bool UserBufferShader::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
 {
-	GLSLShaderProgram* shader = GetShaderPtr();
-	if (!shader)
-		return false;
-
-	FBVector4d v;
-
 	BindSystemUniforms(effectContext);
-
 	return true;
 }
 

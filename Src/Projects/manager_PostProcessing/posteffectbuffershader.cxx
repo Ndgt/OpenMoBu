@@ -258,13 +258,12 @@ bool PostEffectBufferShader::CollectUIValues(FBComponent* component, PostEffectC
 	if (!component || mProperties.empty() || !effectContext)
 		return false;
 
-	//const int variationIndex = GetCurrentShader();
 	ShaderPropertyStorage::EffectMap* effectMap = effectContext->GetEffectPropertyMap();
 	if (!effectMap)
 		return false;
 
-	const uint32_t nameHash = GetNameHash();// nameContext.GetNameHash();
-	ShaderPropertyStorage::PropertyValueMap& writeMap = (*effectMap)[nameHash]; // GetNameHash()
+	const uint32_t nameHash = GetNameHash();
+	ShaderPropertyStorage::PropertyValueMap& writeMap = (*effectMap)[nameHash];
 	
 	writeMap.clear();
 	writeMap.reserve(mProperties.size());
@@ -893,7 +892,7 @@ void PostEffectBufferShader::AutoUploadUniforms(const PostEffectRenderContext& r
 	if (!effectContext)
 		return;
 
-	const uint32_t nameHash = GetNameHash();// nameContext.GetNameHash();
+	const uint32_t nameHash = GetNameHash();
 	const ShaderPropertyStorage::PropertyValueMap* readMap = effectContext->GetEffectPropertyValueMap(nameHash);
 	renderContext.UploadUniforms(readMap, skipTextureProperties);
 }
@@ -940,10 +939,9 @@ void PostEffectBufferShader::BindSystemUniforms(const PostEffectContextProxy* ef
 		return false;
 	};
 	
-	//if (effectContext->GetComponent())
 	if (GetOwner())
 	{
-		useMasking |= fn_lookForMaskingFlag(GetOwner(), GetUseMaskingPropertyName()); // effectContext->GetComponent()
+		useMasking |= fn_lookForMaskingFlag(GetOwner(), GetUseMaskingPropertyName());
 	}
 	else if (effectContext->GetPostProcessData())
 	{

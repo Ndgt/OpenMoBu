@@ -21,11 +21,10 @@ class ShaderPropertyWriter
 {
 public:
     ShaderPropertyWriter(PostEffectBufferShader* shader, PostEffectContextProxy* context)
-        //: mStorage(context->GetShaderPropertyStorage())
         : mEffectHash(shader->GetNameHash())
         , mVariation(shader->GetCurrentShader())
     {
-        mWriteMap = context->GetEffectPropertyValueMap(mEffectHash);// &mStorage->GetWritePropertyMap(mEffectHash);
+        mWriteMap = context->GetEffectPropertyValueMap(mEffectHash);
     }
 
     // Overload for different property types
@@ -42,7 +41,6 @@ public:
     }
 
 private:
-    //ShaderPropertyStorage* mStorage;
     ShaderPropertyStorage::PropertyValueMap* mWriteMap;
     uint32_t mEffectHash;
     int32_t mVariation;
