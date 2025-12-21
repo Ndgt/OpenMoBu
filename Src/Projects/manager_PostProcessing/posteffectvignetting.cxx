@@ -50,7 +50,7 @@ const char* EffectShaderVignetting::GetMaskingChannelPropertyName() const noexce
 	return PostPersistentData::VIGN_MASKING_CHANNEL;
 }
 
-bool EffectShaderVignetting::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderVignetting::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
 {
 	const PostPersistentData* data = effectContext->GetPostProcessData();
 	if (!data)

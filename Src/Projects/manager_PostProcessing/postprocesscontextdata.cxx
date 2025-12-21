@@ -69,7 +69,7 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEva
     const double systemTimeDT = sysTimeSecs - mLastSystemTime;
     const double localTimeDT = localTimeSecs - mLastLocalTime;
 
-    IPostEffectContext::Parameters contextParameters;
+    PostEffectContextProxy::Parameters contextParameters;
 	contextParameters.localFrame = static_cast<int>(localTime.GetFrame());
 	contextParameters.sysTime = sysTimeSecs;
 	contextParameters.sysTimeDT = systemTimeDT;
@@ -246,7 +246,7 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
         mLastSystemTime = sysTimeSecs;
         mLastLocalTime = localTimeSecs;
 
-        IPostEffectContext::Parameters contextParameters;
+        PostEffectContextProxy::Parameters contextParameters;
         contextParameters.localFrame = static_cast<int>(localTime.GetFrame());
         contextParameters.sysTime = sysTimeSecs;
         contextParameters.sysTimeDT = systemTimeDT;

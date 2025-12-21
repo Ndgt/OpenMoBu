@@ -29,130 +29,94 @@ EffectShaderDOF::EffectShaderDOF(FBComponent* ownerIn)
 	// Sample slots
 
 	AddProperty(ShaderProperty("color", "colorSampler"))
-		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true)
+		.SetType(EPropertyType::TEXTURE)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
 		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 
 	// Core depth of field parameters
-	mFocalDistance = &AddProperty(ShaderProperty(PostPersistentData::DOF_FOCAL_DISTANCE,
-		"focalDistance",
-		IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+	mFocalDistance = &AddProperty(ShaderProperty(PostPersistentData::DOF_FOCAL_DISTANCE, "focalDistance", EPropertyType::FLOAT))
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
-	mFocalRange = &AddProperty(ShaderProperty(PostPersistentData::DOF_FOCAL_RANGE,
-		"focalRange",
-		IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+	mFocalRange = &AddProperty(ShaderProperty(PostPersistentData::DOF_FOCAL_RANGE, "focalRange", EPropertyType::FLOAT))
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
-	mFStop = &AddProperty(ShaderProperty(PostPersistentData::DOF_FSTOP,
-		"fstop",
-		IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+	mFStop = &AddProperty(ShaderProperty(PostPersistentData::DOF_FSTOP, "fstop", EPropertyType::FLOAT))
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
-	mCoC = &AddProperty(ShaderProperty(PostPersistentData::DOF_COC,
-		"CoC",
-		IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+	mCoC = &AddProperty(ShaderProperty(PostPersistentData::DOF_COC, "CoC", EPropertyType::FLOAT))
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
 	// Rendering parameters
 	
-	mSamples = &AddProperty(ShaderProperty(PostPersistentData::DOF_SAMPLES,
-		"samples",
-		IEffectShaderConnections::EPropertyType::INT))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+	mSamples = &AddProperty(ShaderProperty(PostPersistentData::DOF_SAMPLES, "samples", EPropertyType::INT))
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
-	mRings = &AddProperty(ShaderProperty(PostPersistentData::DOF_RINGS,
-		"rings",
-		IEffectShaderConnections::EPropertyType::INT))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+	mRings = &AddProperty(ShaderProperty(PostPersistentData::DOF_RINGS, "rings", EPropertyType::INT))
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
 	// Focus control
-	mAutoFocus = &AddProperty(ShaderProperty(PostPersistentData::DOF_AUTO_FOCUS,
-		"autoFocus",
-		IEffectShaderConnections::EPropertyType::BOOL))
+	mAutoFocus = &AddProperty(ShaderProperty(PostPersistentData::DOF_AUTO_FOCUS, "autoFocus", EPropertyType::BOOL))
 		.SetRequired(false);
 
-	mFocus = &AddProperty(ShaderProperty(PostPersistentData::DOF_USE_FOCUS_POINT,
-		"focus",
-		IEffectShaderConnections::EPropertyType::BOOL))
+	mFocus = &AddProperty(ShaderProperty(PostPersistentData::DOF_USE_FOCUS_POINT, "focus", EPropertyType::BOOL))
 		.SetRequired(false);
 
-	mFocusPoint = &AddProperty(ShaderProperty(PostPersistentData::DOF_FOCUS_POINT,
-		"focusPoint",
-		IEffectShaderConnections::EPropertyType::VEC4))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+	mFocusPoint = &AddProperty(ShaderProperty(PostPersistentData::DOF_FOCUS_POINT, "focusPoint", EPropertyType::VEC4))
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
 	mManualDOF = &AddProperty(ShaderProperty("manualdof", "manualdof",
-		IEffectShaderConnections::EPropertyType::BOOL))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually;
+		EPropertyType::BOOL))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually;
 
 	// Near and far DOF blur parameters
 	mNDOFStart = &AddProperty(ShaderProperty("ndofstart", "ndofstart",
-		IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually;
+		EPropertyType::FLOAT))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually;
 
 	mNDOFDist = &AddProperty(ShaderProperty("ndofdist", "ndofdist",
-		IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually;
+		EPropertyType::FLOAT))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually;
 
 	mFDOFStart = &AddProperty(ShaderProperty("fdofstart", "fdofstart",
-		IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually;
+		EPropertyType::FLOAT))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually;
 
 	mFDOFDist = &AddProperty(ShaderProperty("fdofdist", "fdofdist",
-		IEffectShaderConnections::EPropertyType::FLOAT));
+		EPropertyType::FLOAT));
 
 	// Visual enhancement parameters
-	mBlurForeground = &AddProperty(ShaderProperty(PostPersistentData::DOF_BLUR_FOREGROUND,
-		"blurForeground",
-		IEffectShaderConnections::EPropertyType::BOOL))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+	mBlurForeground = &AddProperty(ShaderProperty(PostPersistentData::DOF_BLUR_FOREGROUND, "blurForeground", EPropertyType::BOOL))
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
-	mThreshold = &AddProperty(ShaderProperty(PostPersistentData::DOF_THRESHOLD,
-		"threshold",
-		IEffectShaderConnections::EPropertyType::FLOAT))
+	mThreshold = &AddProperty(ShaderProperty(PostPersistentData::DOF_THRESHOLD, "threshold", EPropertyType::FLOAT))
 		.SetScale(0.01f)
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
-	mGain = &AddProperty(ShaderProperty(PostPersistentData::DOF_GAIN,
-		"gain",
-		IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+	mGain = &AddProperty(ShaderProperty(PostPersistentData::DOF_GAIN, "gain", EPropertyType::FLOAT))
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
-	mBias = &AddProperty(ShaderProperty(PostPersistentData::DOF_BIAS,
-		"bias",
-		IEffectShaderConnections::EPropertyType::FLOAT))
+	mBias = &AddProperty(ShaderProperty(PostPersistentData::DOF_BIAS, "bias", EPropertyType::FLOAT))
 		.SetScale(0.01f)
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
-	mFringe = &AddProperty(ShaderProperty(PostPersistentData::DOF_FRINGE,
-		"fringe",
-		IEffectShaderConnections::EPropertyType::FLOAT))
+	mFringe = &AddProperty(ShaderProperty(PostPersistentData::DOF_FRINGE, "fringe", EPropertyType::FLOAT))
 		.SetScale(0.01f)
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
-	mNoise = &AddProperty(ShaderProperty(PostPersistentData::DOF_NOISE,
-		"noise",
-		IEffectShaderConnections::EPropertyType::BOOL))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+	mNoise = &AddProperty(ShaderProperty(PostPersistentData::DOF_NOISE, "noise", EPropertyType::BOOL))
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
 	// Experimental bokeh shape parameters
-	mPentagon = &AddProperty(ShaderProperty(PostPersistentData::DOF_PENTAGON,
-		"pentagon",
-		IEffectShaderConnections::EPropertyType::BOOL))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+	mPentagon = &AddProperty(ShaderProperty(PostPersistentData::DOF_PENTAGON, "pentagon", EPropertyType::BOOL))
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
-	mFeather = &AddProperty(ShaderProperty(PostPersistentData::DOF_PENTAGON_FEATHER,
-		"feather",
-		IEffectShaderConnections::EPropertyType::FLOAT))
+	mFeather = &AddProperty(ShaderProperty(PostPersistentData::DOF_PENTAGON_FEATHER, "feather", EPropertyType::FLOAT))
 		.SetScale(0.01f)
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
 	// Debug utilities
-	mDebugBlurValue = &AddProperty(ShaderProperty(PostPersistentData::DOF_DEBUG_BLUR_VALUE,
-		"debugBlurValue",
-		IEffectShaderConnections::EPropertyType::BOOL))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+	mDebugBlurValue = &AddProperty(ShaderProperty(PostPersistentData::DOF_DEBUG_BLUR_VALUE, "debugBlurValue", EPropertyType::BOOL))
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 }
 
 const char* EffectShaderDOF::GetUseMaskingPropertyName() const noexcept
@@ -164,7 +128,7 @@ const char* EffectShaderDOF::GetMaskingChannelPropertyName() const noexcept
 	return PostPersistentData::DOF_MASKING_CHANNEL;
 }
 
-bool EffectShaderDOF::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
 {
 	PostPersistentData* pData = effectContext->GetPostProcessData();
 	if (!pData)
@@ -200,7 +164,7 @@ bool EffectShaderDOF::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectConte
 
 		FBModel *pInterest = nullptr;
 		FBCameraFocusDistanceSource cameraFocusDistanceSource;
-		camera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource), evaluateInfo);
+		camera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource), effectContext->GetEvaluateInfo());
 		if (kFBFocusDistanceCameraInterest == cameraFocusDistanceSource)
 			pInterest = camera->Interest;
 		else if (kFBFocusDistanceModel == cameraFocusDistanceSource)

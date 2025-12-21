@@ -9,6 +9,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "posteffectmotionblur.h"
 #include "postpersistentdata.h"
+#include "shaderpropertywriter.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -36,7 +37,7 @@ const char* EffectShaderMotionBlur::GetMaskingChannelPropertyName() const noexce
 	return PostPersistentData::MOTIONBLUR_MASKING_CHANNEL;
 }
 
-bool EffectShaderMotionBlur::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderMotionBlur::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
 {
 	if (!effectContext->GetCamera() || !effectContext->GetPostProcessData())
 		return false;
@@ -45,7 +46,9 @@ bool EffectShaderMotionBlur::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffe
 	
 	if (0 == localFrame || (localFrame != mLastLocalFrame))
 	{
-		effectContext->GetShaderPropertyStorage()->WriteValue(GetNameHash(), *mDt, static_cast<float>(effectContext->GetLocalTimeDT()));
+		ShaderPropertyWriter writer(this, effectContext);
+		writer(mDt, static_cast<float>(effectContext->GetLocalTimeDT()));
+
 		//mDt->SetValue();
 		mLastLocalFrame = effectContext->GetLocalFrame();
 	}

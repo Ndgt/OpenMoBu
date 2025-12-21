@@ -66,7 +66,7 @@ protected:
 		return false;
 	}
 
-	virtual bool OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
 
 private:
 
@@ -97,11 +97,11 @@ private:
 		std::vector<float>		m_LightAlpha;
 
 		void Init();
-		bool CollectUIValues(int shaderIndex, FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex);
+		bool CollectUIValues(int shaderIndex, PostEffectContextProxy* effectContext, int maskIndex);
 		
 	private:
-		void ProcessLightObjects(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos);
-		void ProcessSingleLight(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos);
+		void ProcessLightObjects(PostEffectContextProxy* effectContext, PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos);
+		void ProcessSingleLight(PostEffectContextProxy* effectContext, PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos);
 	};
 
 	SubShader	subShaders[NUMBER_OF_SHADERS];

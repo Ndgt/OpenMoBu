@@ -20,21 +20,21 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 class ShaderPropertyWriter
 {
 public:
-    ShaderPropertyWriter(PostEffectBufferShader* shader, IPostEffectContext* context)
-        : mStorage(context->GetShaderPropertyStorage())
-        , mEffectHash(shader->GetNameHash())
+    ShaderPropertyWriter(PostEffectBufferShader* shader, PostEffectContextProxy* context)
+        //: mStorage(context->GetShaderPropertyStorage())
+        : mEffectHash(shader->GetNameHash())
         , mVariation(shader->GetCurrentShader())
     {
-        mWriteMap = &mStorage->GetWritePropertyMap(mEffectHash);
+        mWriteMap = context->GetEffectPropertyValueMap(mEffectHash);// &mStorage->GetWritePropertyMap(mEffectHash);
     }
 
     // Overload for different property types
     template<typename... Args>
     ShaderPropertyWriter& operator()(IEffectShaderConnections::ShaderProperty* prop, Args&&... args)
     {
-        if (prop && mStorage && mWriteMap)
+        if (prop && mWriteMap)
         {
-            IEffectShaderConnections::ShaderPropertyValue newValue(prop->GetDefaultValue());
+            ShaderPropertyValue newValue(prop->GetDefaultValue());
             newValue.SetValue(std::forward<Args>(args)...);
             mWriteMap->emplace_back(std::move(newValue));
         }
@@ -42,7 +42,7 @@ public:
     }
 
 private:
-    ShaderPropertyStorage* mStorage;
+    //ShaderPropertyStorage* mStorage;
     ShaderPropertyStorage::PropertyValueMap* mWriteMap;
     uint32_t mEffectHash;
     int32_t mVariation;

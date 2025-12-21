@@ -133,7 +133,7 @@ protected:
 	virtual bool OnPrepareUniforms(const int variationIndex) override;
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
 
 	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
 	virtual void OnPropertyAdded(ShaderProperty& property) override;
@@ -197,7 +197,7 @@ public:
 	PostEffectBufferShader* GetUserShaderPtr() const { return mUserShader.get(); }
 
 	// recalculate width and height based on shader resolution option
-	void RecalculateWidthAndHeight(int& w, int& h);
+	void RecalculateWidthAndHeight(int& w, int& h) const;
 
 	
 

@@ -43,7 +43,7 @@ public:
 	PostEffectChain(PostPersistentData* pData);
 	virtual ~PostEffectChain() = default;
 
-	void Evaluate(PostEffectContextMoBu* effectContext, FBEvaluateInfo* evaluateInfo, FBCamera* cameraIn);
+	void Evaluate(PostEffectContextProxy* effectContextProxy);
 	void Synchronize();
 
 	void ChangeContext();
@@ -58,8 +58,7 @@ public:
 	bool Render(
 		PostEffectBuffers* buffers, 
 		double systemTime, 
-		PostEffectContextMoBu* effectContext,
-		FBEvaluateInfo* evaluateInfo);
+		PostEffectContextProxy* effectContextProxy);
 
 	bool IsCompressedDataReady() const
 	{
@@ -143,8 +142,7 @@ private:
 		PostEffectBase* effect, 
 		const GLuint depthId, 
 		bool makeDownscale, 
-		PostEffectContextMoBu& effectContext,
-		FBEvaluateInfo* evaluateInfo);
+		PostEffectContextProxy* effectContextProxy);
 
 	void RenderWorldNormals(PostEffectBuffers* buffers);
 
@@ -154,7 +152,7 @@ private:
 	void BlurMasksPass(const int maskIndex, 
 		PostEffectBuffers* buffers, 
 		PostEffectBilateralBlur* effect, 
-		PostEffectContextMoBu& effectContext);
+		PostEffectContextProxy* effectContextProxy);
 
 	/// <summary>
 	/// mix masks = mask A * mask B
@@ -164,7 +162,7 @@ private:
 		const int maskindex, 
 		const int maskIndex2, 
 		PostEffectBuffers* buffers, 
-		PostEffectContextMoBu& effectContext);
+		PostEffectContextProxy* effectContextProxy);
 
 	/// <summary>
 	/// send a packet with final post processed image

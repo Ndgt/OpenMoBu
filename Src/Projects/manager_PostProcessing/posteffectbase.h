@@ -92,7 +92,7 @@ public:
 	// TODO: should it be a general FBComponent instead of pre-defined PostPersistentData user object ?!
 	// @param effectContext to get access to fx chain, shader property storage
 	//  if we want custom rules to read from UI, we should write into shader property storage
-	virtual bool CollectUIValues(IPostEffectContext* effectContext, FBEvaluateInfo* evaluateInfo);
+	virtual bool CollectUIValues(PostEffectContextProxy* effectContext);
 
 	// TODO: mask index is like a pre-defined input connection
 	//! define internal mask channel index or -1 for default, it comes from a user input (UI)
@@ -107,15 +107,15 @@ public:
 
 	// render context can be modified to provide next free user texture slot
 	// effect context can be modified by updating shader property texture slot values
-	virtual void Render(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext);
+	virtual void Render(PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext);
 
-	bool HasAnySourceShaders(const IPostEffectContext* effectContext) const;
-	bool HasAnySourceTextures(const IPostEffectContext* effectContext) const;
+	bool HasAnySourceShaders(const PostEffectContextProxy* effectContext) const;
+	bool HasAnySourceTextures(const PostEffectContextProxy* effectContext) const;
 
 	// render context can be modified to provide next free user texture slot
 	// effect context is for read/write, we modify user texture slots based on connected source shaders/textures
-	bool PreProcessSourceShaders(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext) const;
-	bool PreProcessSourceTextures(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext) const;
+	bool PreProcessSourceShaders(PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext) const;
+	bool PreProcessSourceTextures(PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext) const;
 
 	virtual int GetNumberOfBufferShaders() const abstract;
 	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) abstract;

@@ -92,14 +92,14 @@ bool PostEffectBase::IsWorldNormalSamplerUsed() const
 	return false;
 }
 
-bool PostEffectBase::CollectUIValues(IPostEffectContext* effectContext, FBEvaluateInfo* evaluateInfo)
+bool PostEffectBase::CollectUIValues(PostEffectContextProxy* effectContext)
 {
 	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
 	{
 		if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
 		{
 			FBComponent* effectComponent = bufferShader->GetOwner() ? bufferShader->GetOwner() : effectContext->GetPostProcessData();
-			if (!bufferShader->CollectUIValues(effectComponent, evaluateInfo, effectContext, GetMaskIndex()))
+			if (!bufferShader->CollectUIValues(effectComponent, effectContext, GetMaskIndex()))
 			{
 				return false;
 			}
@@ -109,7 +109,7 @@ bool PostEffectBase::CollectUIValues(IPostEffectContext* effectContext, FBEvalua
 	return true;
 }
 
-bool PostEffectBase::HasAnySourceShaders(const IPostEffectContext* effectContext) const
+bool PostEffectBase::HasAnySourceShaders(const PostEffectContextProxy* effectContext) const
 {
 	if (GetNumberOfBufferShaders() == 0)
 		return false;
@@ -122,7 +122,7 @@ bool PostEffectBase::HasAnySourceShaders(const IPostEffectContext* effectContext
 	return false;
 }
 
-bool PostEffectBase::HasAnySourceTextures(const IPostEffectContext* effectContext) const
+bool PostEffectBase::HasAnySourceTextures(const PostEffectContextProxy* effectContext) const
 {
 	if (GetNumberOfBufferShaders() == 0)
 		return false;
@@ -135,7 +135,7 @@ bool PostEffectBase::HasAnySourceTextures(const IPostEffectContext* effectContex
 	return false;
 }
 
-bool PostEffectBase::PreProcessSourceShaders(PostEffectRenderContext& renderContextParent, IPostEffectContext* effectContext) const
+bool PostEffectBase::PreProcessSourceShaders(PostEffectRenderContext& renderContextParent, PostEffectContextProxy* effectContext) const
 {
 	const int mainBufferShader = GetNumberOfBufferShaders() - 1;
 	const PostEffectBufferShader* bufferShader = GetBufferShaderPtr(mainBufferShader);
@@ -144,7 +144,7 @@ bool PostEffectBase::PreProcessSourceShaders(PostEffectRenderContext& renderCont
 
 	PostEffectBufferShader::SourceShadersMap sourceShaders = bufferShader->GetSourceShaders(effectContext);
 
-	for (IEffectShaderConnections::ShaderPropertyValue* propValue : sourceShaders)
+	for (ShaderPropertyValue* propValue : sourceShaders)
 	{
 		EffectShaderUserObject* userObject = propValue->shaderUserObject;
 		PostEffectBufferShader* bufferShader = userObject->GetUserShaderPtr();
@@ -189,7 +189,7 @@ bool PostEffectBase::PreProcessSourceShaders(PostEffectRenderContext& renderCont
 	return true;
 }
 
-bool PostEffectBase::PreProcessSourceTextures(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext) const
+bool PostEffectBase::PreProcessSourceTextures(PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext) const
 {
 	const int mainBufferShader = GetNumberOfBufferShaders() - 1;
 	const PostEffectBufferShader* bufferShader = GetBufferShaderPtr(mainBufferShader);
@@ -199,7 +199,7 @@ bool PostEffectBase::PreProcessSourceTextures(PostEffectRenderContext& renderCon
 	PostEffectBufferShader::SourceTexturesMap sourceTextures = bufferShader->GetSourceTextures(effectContext);
 
 	// bind sampler from a media resource texture
-	for (IEffectShaderConnections::ShaderPropertyValue* propValue : sourceTextures)
+	for (ShaderPropertyValue* propValue : sourceTextures)
 	{
 		FBTexture* texture = propValue->texture;
 		if (!texture)
@@ -230,7 +230,7 @@ bool PostEffectBase::PreProcessSourceTextures(PostEffectRenderContext& renderCon
 	return true;
 }
 
-void PostEffectBase::Render(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext)
+void PostEffectBase::Render(PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext)
 {
 	if (GetNumberOfBufferShaders() == 0)
 		return;

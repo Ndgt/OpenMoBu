@@ -57,7 +57,7 @@ protected:
 	}
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
 
 private:
 	static constexpr const char* SHADER_NAME = "Mix";

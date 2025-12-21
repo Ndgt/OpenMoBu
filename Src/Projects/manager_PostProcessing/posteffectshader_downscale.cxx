@@ -29,7 +29,7 @@ PostEffectShaderDownscale::PostEffectShaderDownscale(FBComponent* uiComponent)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderDownscale::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
+bool PostEffectShaderDownscale::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
 {
 	ShaderPropertyWriter writer(this, effectContext);
 	writer(mTexelSize, 1.0f / static_cast<float>(effectContext->GetViewWidth()), 1.0f / static_cast<float>(effectContext->GetViewHeight()));

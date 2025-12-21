@@ -40,7 +40,7 @@ public:
 
 	//virtual bool CollectUIValues(IPostEffectContext* effectContext) override;
 
-	virtual void Render(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext) override;
+	virtual void Render(PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext) override;
 
 protected:
 
@@ -82,7 +82,7 @@ protected:
 		return false;
 	}
 
-	virtual bool OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
 
 	//! bind effect shader program
 	bool Bind() override;

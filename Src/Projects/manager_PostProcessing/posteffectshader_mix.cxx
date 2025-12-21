@@ -64,7 +64,7 @@ EffectShaderMix::EffectShaderMix(FBComponent* uiComponent)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool EffectShaderMix::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderMix::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
 {
 	ShaderPropertyWriter writer(this, effectContext);
 

@@ -362,22 +362,22 @@ FBProperty* EffectShaderUserObject::GetOrMakeProperty(const UserBufferShader::Sh
 
 		switch (prop.GetType())
 		{
-		case IEffectShaderConnections::EPropertyType::INT:
+		case EPropertyType::INT:
 			fbProperty = MakePropertyInt(prop);
 			break;
-		case IEffectShaderConnections::EPropertyType::FLOAT:
+		case EPropertyType::FLOAT:
 			fbProperty = MakePropertyFloat(prop);
 			break;
-		case IEffectShaderConnections::EPropertyType::VEC2:
+		case EPropertyType::VEC2:
 			fbProperty = MakePropertyVec2(prop);
 			break;
-		case IEffectShaderConnections::EPropertyType::VEC3:
+		case EPropertyType::VEC3:
 			fbProperty = MakePropertyVec3(prop);
 			break;
-		case IEffectShaderConnections::EPropertyType::VEC4:
+		case EPropertyType::VEC4:
 			fbProperty = MakePropertyVec4(prop);
 			break;
-		case IEffectShaderConnections::EPropertyType::TEXTURE:
+		case EPropertyType::TEXTURE:
 			fbProperty = MakePropertySampler(prop);
 			break;
 		default:
@@ -457,7 +457,7 @@ void UserBufferShader::OnPropertyAdded(ShaderProperty& prop)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool UserBufferShader::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
+bool UserBufferShader::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
 {
 	GLSLShaderProgram* shader = GetShaderPtr();
 	if (!shader)
@@ -470,7 +470,7 @@ bool UserBufferShader::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectCont
 	return true;
 }
 
-void EffectShaderUserObject::RecalculateWidthAndHeight(int& w, int& h)
+void EffectShaderUserObject::RecalculateWidthAndHeight(int& w, int& h) const
 {
 	switch (Resolution)
 	{

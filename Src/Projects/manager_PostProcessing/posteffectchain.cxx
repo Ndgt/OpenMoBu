@@ -358,8 +358,7 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers,
 	PostEffectBase* effect, 
 	const GLuint depthId, 
 	bool makeDownscale, 
-	PostEffectContextMoBu& effectContext,
-	FBEvaluateInfo* evaluateInfo)
+	PostEffectContextProxy* effectContextProxy)
 {
 	if (!buffers || !effect || depthId == 0)
 		return;
@@ -394,8 +393,8 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers,
 	glBindTexture(GL_TEXTURE_2D, depthId);
 	glActiveTexture(GL_TEXTURE0);
 
-	effect->CollectUIValues(&effectContext, evaluateInfo);
-	effect->Render(renderContext, &effectContext);
+	effect->CollectUIValues(effectContextProxy);
+	effect->Render(renderContext, effectContextProxy);
 
 	// DONE: bind a depth texture
 	const GLuint linearDepthId = pBufferDepth->GetColorObject();
@@ -450,7 +449,7 @@ void PostEffectChain::ReleaseDoubleFrameBuffer(PostEffectBuffers* buffers)
 void PostEffectChain::BlurMasksPass(const int maskIndex, 
 	PostEffectBuffers* buffers, 
 	PostEffectBilateralBlur* effect, 
-	PostEffectContextMoBu& effectContext)
+	PostEffectContextProxy* effectContextProxy)
 {
 	assert(maskIndex < PostPersistentData::NUMBER_OF_MASKS);
 	if (!effect)
@@ -479,7 +478,7 @@ void PostEffectChain::BlurMasksPass(const int maskIndex,
 		renderContext.OverrideUniform(*BlurProp, static_cast<float>(value[0]), static_cast<float>(value[1]));
 	}
 	
-	effect->Render(renderContext, &effectContext);
+	effect->Render(renderContext, effectContextProxy);
 
 	BlitFBOToFBOCustomAttachment(maskRequest->GetFrameBuffer(), w, h, PostPersistentData::NUMBER_OF_MASKS,
 		maskRequest->GetFrameBuffer(), w, h, maskIndex);
@@ -489,7 +488,7 @@ void PostEffectChain::MixMasksPass(PostEffectMix* effect,
 	const int maskIndex, 
 	const int maskIndex2, 
 	PostEffectBuffers* buffers, 
-	PostEffectContextMoBu& effectContext)
+	PostEffectContextProxy* effectContextProxy)
 {
 	MaskFramebufferRequestScope maskRequest(this, buffers);
 	
@@ -520,7 +519,7 @@ void PostEffectChain::MixMasksPass(PostEffectMix* effect,
 		renderContext.OverrideUniform(*BloomProp, 0.0f, 0.0f, 1.0f, 0.0f);
 	}
 
-	effect->Render(renderContext, &effectContext);
+	effect->Render(renderContext, effectContextProxy);
 
 	maskRequest->UnBind();
 
@@ -533,9 +532,9 @@ void PostEffectChain::MixMasksPass(PostEffectMix* effect,
 		maskRequest->GetFrameBuffer(), w, h, maskIndex);
 }
 
-void PostEffectChain::Evaluate(PostEffectContextMoBu* effectContext, FBEvaluateInfo* evaluateInfo, FBCamera* cameraIn)
+void PostEffectChain::Evaluate(PostEffectContextProxy* effectContextProxy)
 {
-	mLastCamera = cameraIn;
+	mLastCamera = effectContextProxy->GetCamera();
 	constexpr std::uint8_t kBufferCount = 2;
 
 	const uint8_t activeIndex = gActiveData.load(std::memory_order_acquire);
@@ -552,7 +551,7 @@ void PostEffectChain::Evaluate(PostEffectContextMoBu* effectContext, FBEvaluateI
 		return;
 	}
 	
-	if (!PrepareChainOrder(effectChain, effectContext->GetEffectCollection()))
+	if (!PrepareChainOrder(effectChain, effectContextProxy->GetEffectCollection()))
 	{	
 		return;
 	}
@@ -620,7 +619,7 @@ void PostEffectChain::Evaluate(PostEffectContextMoBu* effectContext, FBEvaluateI
 			continue;
 		}
 
-		effect->CollectUIValues(effectContext, evaluateInfo);
+		effect->CollectUIValues(effectContextProxy);
 	}
 }
 
@@ -634,8 +633,7 @@ void PostEffectChain::Synchronize()
 bool PostEffectChain::Render(
 	PostEffectBuffers* buffers, 
 	double systime, 
-	PostEffectContextMoBu* effectContext,
-	FBEvaluateInfo* evaluateInfo)
+	PostEffectContextProxy* effectContextProxy)
 {
 	const uint8_t activeIndex = gActiveData.load(std::memory_order_acquire);
 	RenderData& data = mRenderData[activeIndex];
@@ -657,7 +655,7 @@ bool PostEffectChain::Render(
 	MaskFramebufferRequestScope maskRequest(this, buffers);
 
 	// 2. prepare and render into masks
-	auto effectCollection = effectContext->GetEffectCollection();
+	auto effectCollection = effectContextProxy->GetEffectCollection();
 
 	for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
 	{
@@ -675,7 +673,7 @@ bool PostEffectChain::Render(
 		{
 			if (data.maskRenderFlags[i] && mSettings->Masks[i].BlurMask)
 			{
-				BlurMasksPass(i, buffers, effectCollection->mEffectBilateralBlur.get(), *effectContext);
+				BlurMasksPass(i, buffers, effectCollection->mEffectBilateralBlur.get(), effectContextProxy);
 			}
 		}
 	}
@@ -696,7 +694,7 @@ bool PostEffectChain::Render(
 				&& i != mask2
 				&& data.maskRenderFlags[mask2])
 			{
-				MixMasksPass(effectCollection->mEffectMix.get(), i, mask2, buffers, *effectContext);
+				MixMasksPass(effectCollection->mEffectMix.get(), i, mask2, buffers, effectContextProxy);
 			}
 		}
 	}
@@ -745,7 +743,7 @@ bool PostEffectChain::Render(
 			if (depthId != 0)
 			{
 				constexpr bool makeDownscale = false;
-				RenderLinearDepth(buffers, depthEffect, depthId, makeDownscale, *effectContext, evaluateInfo);
+				RenderLinearDepth(buffers, depthEffect, depthId, makeDownscale, effectContextProxy);
 			}
 		}
 	}
@@ -815,7 +813,7 @@ bool PostEffectChain::Render(
 			renderContext.generateMips = generateMips;
 			renderContext.userTextureSlot = CommonEffect::UserSamplerSlot;
 
-			effect->Render(renderContext, effectContext);
+			effect->Render(renderContext, effectContextProxy);
 
 			// if local masking index was used, switch back to global mask for next effect
 			if (customMaskBinded)

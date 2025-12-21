@@ -55,7 +55,7 @@ struct PostEffectRenderContext
 	// upload from a given map and apply override uniforms after that
 	void UploadUniforms(const ShaderPropertyStorage::PropertyValueMap* uniformsMap, bool skipTextureProperties) const;
 
-	static void UploadUniformValue(const IEffectShaderConnections::ShaderPropertyValue& value, bool skipTextureProperties);
+	static void UploadUniformValue(const ShaderPropertyValue& value, bool skipTextureProperties);
 
 private:
 	void UploadUniformsInternal(const ShaderPropertyStorage::PropertyValueMap& uniformsMap, bool skipTextureProperties) const;

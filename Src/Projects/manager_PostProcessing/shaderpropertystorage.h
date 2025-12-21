@@ -9,7 +9,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 */
 
-#include "effectshaderconnections.h"
+#include "shaderpropertyvalue.h"
 #include <atomic>
 #include <memory>
 #include <unordered_map>
@@ -79,7 +79,7 @@ public:
     }
 
     // Same ValueKey structure as above
-    using PropertyValueMap = std::vector<IEffectShaderConnections::ShaderPropertyValue>;
+    using PropertyValueMap = std::vector<ShaderPropertyValue>;
     using EffectMap = std::unordered_map<uint32_t, PropertyValueMap>;
 
     /**
@@ -92,10 +92,16 @@ public:
         return mBuffers[writeIndex][effectHash];
     }
 
-    void WriteValue(uint32_t effectHash, IEffectShaderConnections::ShaderProperty& property, float valueIn)
+    EffectMap& GetWriteEffectMap()
+    {
+        const int writeIndex = 1 - mReadIndex.load(std::memory_order_relaxed);
+        return mBuffers[writeIndex];
+	}
+
+    void WriteValue(uint32_t effectHash, const ShaderPropertyValue& defaultPropertyValue, float valueIn)
     {
         PropertyValueMap& propertyMap = GetWritePropertyMap(effectHash);
-        IEffectShaderConnections::ShaderPropertyValue propValue(property.GetDefaultValue());
+        ShaderPropertyValue propValue(defaultPropertyValue);
         propValue.SetValue(valueIn);
         propertyMap.emplace_back(std::move(propValue));
     }
@@ -108,6 +114,12 @@ public:
         return (it != end(mBuffers[readIndex])) ? &it->second : nullptr;
     }
 
+    EffectMap& GetReadEffectMap()
+    {
+        const int readIndex = mReadIndex.load(std::memory_order_relaxed);
+        return mBuffers[readIndex];
+    }
+
     PropertyValueMap* GetReadPropertyMap(uint32_t effectHash)
     {
         VERIFY(effectHash != 0);
@@ -116,14 +128,14 @@ public:
         return (it != end(mBuffers[readIndex])) ? &it->second : nullptr;
     }
     
-    IEffectShaderConnections::ShaderPropertyValue& GetWriteValue(
-        uint32_t effectHash, IEffectShaderConnections::ShaderProperty& property)
+    ShaderPropertyValue& GetWriteValue(
+        uint32_t effectHash, const ShaderPropertyValue& defaultPropertyValue)
     {
         VERIFY(effectHash != 0);
         auto& writeMap = GetWritePropertyMap(effectHash);
-        writeMap.emplace_back(property.GetDefaultValue());
+        writeMap.emplace_back(defaultPropertyValue);
 
-        IEffectShaderConnections::ShaderPropertyValue& result = writeMap.back();
+        ShaderPropertyValue& result = writeMap.back();
         return result;
     }
     

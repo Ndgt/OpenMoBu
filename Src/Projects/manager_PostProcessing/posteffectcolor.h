@@ -38,7 +38,7 @@ public:
 
 	//virtual bool CollectUIValues(IPostEffectContext* effectContext) override;
 
-	virtual void Render(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext) override;
+	virtual void Render(PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContextProxy) override;
 
 protected:
 
@@ -84,5 +84,5 @@ protected:
 	// this is a predefined effect shader, properties are defined manually
 	bool DoPopulatePropertiesFromUniforms() const override { return false;  }
 
-	virtual bool OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContextProxy, int maskIndex) override;
 };

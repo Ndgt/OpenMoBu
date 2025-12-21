@@ -24,7 +24,7 @@ PostEffectShaderLinearDepth::PostEffectShaderLinearDepth(FBComponent* uiComponen
 		.SetFlag(PropertyFlag::ShouldSkip, true);
 }
 
-bool PostEffectShaderLinearDepth::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
+bool PostEffectShaderLinearDepth::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
 {
 	const float znear = effectContext->GetCameraNearDistance();
 	const float zfar = effectContext->GetCameraFarDistance();	

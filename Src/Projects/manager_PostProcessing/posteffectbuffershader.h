@@ -78,20 +78,23 @@ public:
 	/// @param colorAttachment defines which color attachment of the dstBuffer to render into
 	/// @param inputTextureId defines the input texture to process
 	/// </summary>
-	void Render(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext);
+	void Render(PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext);
 
 	// number of shaders in properties that are used as sources for this effect
-	int GetNumberOfSourceShaders(const IPostEffectContext* effectContext) const;
-	bool HasAnySourceShaders(const IPostEffectContext* effectContext) const;
+	int GetNumberOfSourceShaders(const PostEffectContextProxy* effectContext) const;
+	bool HasAnySourceShaders(const PostEffectContextProxy* effectContext) const;
 
-	bool HasAnySourceTextures(const IPostEffectContext* effectContext) const;
+	bool HasAnySourceTextures(const PostEffectContextProxy* effectContext) const;
 
 	// get a source effect by index
-	using SourceShadersMap = std::vector<IEffectShaderConnections::ShaderPropertyValue*>;
-	SourceShadersMap GetSourceShaders(IPostEffectContext* effectContext) const;
+	using SourceShadersMapConst = std::vector<const ShaderPropertyValue*>;
+	const SourceShadersMapConst GetSourceShadersConst(PostEffectContextProxy* effectContext) const;
 
-	using SourceTexturesMap = std::vector<IEffectShaderConnections::ShaderPropertyValue*>;
-	SourceTexturesMap GetSourceTextures(IPostEffectContext* effectContext) const;
+	using SourceShadersMap = std::vector<ShaderPropertyValue*>;
+	SourceShadersMap GetSourceShaders(PostEffectContextProxy* effectContext) const;
+
+	using SourceTexturesMap = std::vector<ShaderPropertyValue*>;
+	SourceTexturesMap GetSourceTextures(PostEffectContextProxy* effectContext) const;
 
 	// means that processing will use smaller size of a buffer
 	void SetDownscaleMode(const bool value);
@@ -126,10 +129,10 @@ public:
 	* @param skipTextureProperties can be useful for multipass uniform update, when textures are already bound
 	*/
 	void AutoUploadUniforms(const PostEffectRenderContext& renderContext,
-		const IPostEffectContext* effectContext, bool skipTextureProperties);
+		const PostEffectContextProxy* effectContext, bool skipTextureProperties);
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	bool CollectUIValues(FBComponent* component, FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) override;
+	bool CollectUIValues(FBComponent* component, PostEffectContextProxy* effectContext, int maskIndex) override;
 
 	bool ReloadPropertyShaders();
 
@@ -154,7 +157,7 @@ protected:
 	void	ResetSystemUniformLocations();
 	int		FindSystemUniform(const char* uniformName); // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
 	bool	IsInternalGLSLUniform(const char* uniformName);
-	void	BindSystemUniforms(const IPostEffectContext* effectContext) const;
+	void	BindSystemUniforms(const PostEffectContextProxy* effectContext) const;
 
 	inline GLint GetSystemUniformLoc(ShaderSystemUniform u) const noexcept {
 		return mSystemUniformLocations[static_cast<uint32_t>(u)];
@@ -188,7 +191,7 @@ protected:
 	virtual bool DoPopulatePropertiesFromUniforms() const = 0;
 
 	virtual bool OnPrepareUniforms(const int variationIndex) { return true; }
-	virtual bool OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex) { return true; }
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) { return true; }
 	virtual void OnUniformsUploaded(int passIndex) {}
 
 	//! bind effect shader program
@@ -197,7 +200,7 @@ protected:
 	virtual void UnBind();
 
 	// we going to render all input connected effect shaders and prepare input connected textures
-	void PreRender(PostEffectRenderContext& renderContextParent, IPostEffectContext* effectContext) const;
+	void PreRender(PostEffectRenderContext& renderContextParent, PostEffectContextProxy* effectContext) const;
 
 	//! derived classes could have own preparation steps before each pass
 	virtual bool OnRenderPassBegin(int passIndex, PostEffectRenderContext& renderContext) { return true; }

@@ -80,7 +80,7 @@ bool PostEffectSSAO::CollectUIValues(IPostEffectContext* effectContext)
 	return PostEffectBase::CollectUIValues(effectContext);
 }
 */
-void PostEffectSSAO::Render(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext)
+void PostEffectSSAO::Render(PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext)
 {
 	// render SSAO into its own buffer
 	constexpr const char* ssaoBufferName = "ssao";
@@ -248,7 +248,7 @@ void EffectShaderSSAO::DeleteTextures()
 	}
 }
 
-bool EffectShaderSSAO::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderSSAO::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
 {
 	FBCamera* camera = effectContext->GetCamera();
 	const PostPersistentData* pData = effectContext->GetPostProcessData();

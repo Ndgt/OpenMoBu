@@ -16,7 +16,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::ShaderProperty& shaderProperty, float valueIn)
 {
-	IEffectShaderConnections::ShaderPropertyValue newValue(shaderProperty.GetDefaultValue());
+	ShaderPropertyValue newValue(shaderProperty.GetDefaultValue());
 	newValue.SetValue(valueIn);
 
 	overrideUniforms.emplace_back(std::move(newValue));
@@ -24,7 +24,7 @@ void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::Sh
 
 void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::ShaderProperty& shaderProperty, float x, float y)
 {
-	IEffectShaderConnections::ShaderPropertyValue newValue(shaderProperty.GetDefaultValue());
+	ShaderPropertyValue newValue(shaderProperty.GetDefaultValue());
 	newValue.SetValue(x, y);
 
 	overrideUniforms.emplace_back(std::move(newValue));
@@ -32,7 +32,7 @@ void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::Sh
 
 void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::ShaderProperty& shaderProperty, float x, float y, float z, float w)
 {
-	IEffectShaderConnections::ShaderPropertyValue newValue(shaderProperty.GetDefaultValue());
+	ShaderPropertyValue newValue(shaderProperty.GetDefaultValue());
 	newValue.SetValue(x, y, z, w);
 
 	overrideUniforms.emplace_back(std::move(newValue));
@@ -54,13 +54,13 @@ void PostEffectRenderContext::UploadUniformsInternal(const ShaderPropertyStorage
 {
 	//GLint userTextureSlot = CommonEffect::UserSamplerSlot; //!< start index to bind user textures
 
-	for (const IEffectShaderConnections::ShaderPropertyValue& value : uniformsMap)
+	for (const ShaderPropertyValue& value : uniformsMap)
 	{
 		UploadUniformValue(value, skipTextureProperties);
 	}
 }
 
-void PostEffectRenderContext::UploadUniformValue(const IEffectShaderConnections::ShaderPropertyValue& value, bool skipTextureProperties)
+void PostEffectRenderContext::UploadUniformValue(const ShaderPropertyValue& value, bool skipTextureProperties)
 {
 	constexpr int MAX_USER_TEXTURE_SLOTS = 16;
 
@@ -91,15 +91,15 @@ void PostEffectRenderContext::UploadUniformValue(const IEffectShaderConnections:
 
 	switch (value.GetType())
 	{
-	case IEffectShaderConnections::EPropertyType::INT:
+	case EPropertyType::INT:
 		glUniform1i(value.GetLocation(), static_cast<int>(floatData[0]));
 		break;
 
-	case IEffectShaderConnections::EPropertyType::BOOL:
+	case EPropertyType::BOOL:
 		glUniform1f(value.GetLocation(), floatData[0]);
 		break;
 
-	case IEffectShaderConnections::EPropertyType::FLOAT:
+	case EPropertyType::FLOAT:
 	{
 		float scaledValue = value.GetScale() * floatData[0];
 		if (value.IsInvertValue())
@@ -108,20 +108,20 @@ void PostEffectRenderContext::UploadUniformValue(const IEffectShaderConnections:
 		glUniform1f(value.GetLocation(), scaledValue);
 	} break;
 
-	case IEffectShaderConnections::EPropertyType::VEC2:
+	case EPropertyType::VEC2:
 		glUniform2fv(value.GetLocation(), 1, floatData);
 		break;
 
-	case IEffectShaderConnections::EPropertyType::VEC3:
+	case EPropertyType::VEC3:
 		glUniform3fv(value.GetLocation(), 1, floatData);
 		break;
 
-	case IEffectShaderConnections::EPropertyType::VEC4:
+	case EPropertyType::VEC4:
 		glUniform4fv(value.GetLocation(), 1, floatData);
 		break;
 
-	case IEffectShaderConnections::EPropertyType::TEXTURE:
-	case IEffectShaderConnections::EPropertyType::SHADER_USER_OBJECT:
+	case EPropertyType::TEXTURE:
+	case EPropertyType::SHADER_USER_OBJECT:
 	{
 
 		// designed to be used with multi-pass rendering, when textures are bound from the first pass

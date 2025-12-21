@@ -80,7 +80,7 @@ bool PostEffectColor::CollectUIValues(IPostEffectContext* effectContext)
 	return PostEffectBase::CollectUIValues(effectContext);
 }
 */
-void PostEffectColor::Render(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext)
+void PostEffectColor::Render(PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext)
 {
 	// render SSAO into its own buffer
 	constexpr const char* bufferName = "color_correction";
@@ -191,7 +191,7 @@ const char* EffectShaderColor::GetMaskingChannelPropertyName() const noexcept
 	return PostPersistentData::COLOR_MASKING_CHANNEL;
 }
 
-bool EffectShaderColor::OnCollectUI(FBEvaluateInfo* evaluateInfo, IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderColor::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
 {
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
 	if (!pData)
