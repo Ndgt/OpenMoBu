@@ -143,8 +143,10 @@ bool EffectShaderMixUserObject::FBCreate()
 	BloomTone = 100.0;
 	BloomStretch = 100.0;
 
-	ShaderFile = EffectShaderMix::SHADER_FRAGMENT;
-	ShaderFile.ModifyPropertyFlag(FBPropertyFlag::kFBPropertyFlagReadOnly, true);
+	VertexFile = EffectShaderMix::SHADER_VERTEX;
+	VertexFile.ModifyPropertyFlag(FBPropertyFlag::kFBPropertyFlagReadOnly, true);
+	FragmentFile = EffectShaderMix::SHADER_FRAGMENT;
+	FragmentFile.ModifyPropertyFlag(FBPropertyFlag::kFBPropertyFlagReadOnly, true);
 	NumberOfPasses.ModifyPropertyFlag(FBPropertyFlag::kFBPropertyFlagReadOnly, true);
 	UniqueClassId = 73;
 

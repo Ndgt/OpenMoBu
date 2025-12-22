@@ -110,7 +110,7 @@ void PostEffectUserObject::ActionReloadShaders(HIObject pObject, bool value)
 	PostEffectUserObject* p = FBCast<PostEffectUserObject>(pObject);
 	if (p && value)
 	{
-		p->DoReloadShaders();
+		p->RequestShadersReload();
 	}
 }
 
@@ -163,7 +163,7 @@ bool PostEffectUserObject::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObjectStore 
 		RefreshEffectConnections();
 		if (IsReadyAndActive())
 		{
-			DoReloadShaders();
+			RequestShadersReload();
 		}
 	}
 
@@ -220,8 +220,10 @@ bool PostEffectUserObject::IsReadyAndActive() const
 	return true;
 }
 
-void PostEffectUserObject::DoReloadShaders()
+void PostEffectUserObject::RequestShadersReload()
 {
+	mReloadShaders = true;
+
 	for (int i = 0; i < BufferShaders.GetCount(); ++i)
 	{
 		if (FBIS(BufferShaders[i], EffectShaderUserObject))

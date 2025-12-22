@@ -132,10 +132,10 @@ public:
 
 	bool IsReadyAndActive() const;
 
-	void DoReloadShaders();
+	void RequestShadersReload();
 
-	bool IsNeedToReloadShaders();
-	void SetReloadShadersState(bool state);
+	bool IsNeedToReloadShaders() const { return mReloadShaders; }
+	void SetReloadShadersState(bool state) { mReloadShaders = state; }
 
 	UserEffect* GetUserEffectPtr() const { return mUserEffect.get(); }
 

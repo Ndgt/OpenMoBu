@@ -102,9 +102,9 @@ public:
 	virtual const char* GetName() const override;
 	uint32_t GetNameHash() const override;
 	//! get a filename of vertex shader, for this effect. returns a relative filename
-	virtual const char* GetVertexFname(const int variationIndex) const override { return "simple.vsh"; }
+	virtual const char* GetVertexFname(const int variationIndex) const override;
 	//! get a filename of a fragment shader, for this effect, returns a relative filename
-	virtual const char* GetFragmentFname(const int variationIndex) const override { return "test.glslf"; }
+	virtual const char* GetFragmentFname(const int variationIndex) const override;
 
 	/// new feature to have several passes for a specified effect
 	virtual int GetNumberOfPasses() const override;
@@ -112,12 +112,14 @@ public:
 	//! initialize a specific path for drawing
 	virtual bool OnRenderPassBegin(const int pass, PostEffectRenderContext& renderContext) override;
 
-private:
+protected:
+	friend class EffectShaderUserObject;
+	
 	static constexpr const char* SHADER_NAME = "User Effect";
 	static uint32_t SHADER_NAME_HASH;
 
-protected:
-	friend class EffectShaderUserObject;
+	static constexpr const char* DEFAULT_VERTEX_SHADER_FILE = "/GLSL/simple130.glslv";
+	static constexpr const char* DEFAULT_FRAGMENT_SHADER_FILE = "/GLSL/test.glslf";
 
 	//!< scene object, data container and interaction with the end user
 	EffectShaderUserObject* mUserObject;
@@ -174,7 +176,8 @@ public: // PROPERTIES
 
 	FBPropertyListObject		OutputVideo; //!< in case of render to texture, let's expose it in the FBVideoMemory
 
-	FBPropertyString			ShaderFile; //!< fragment shader file to evaluate
+	FBPropertyString			VertexFile;   //!< vertex shader file to evaluate
+	FBPropertyString			FragmentFile; //!< fragment shader file to evaluate
 
 	FBPropertyAction			ReloadShaders;
 	FBPropertyAction			OpenFolder; // open a folder where the shader file is located (if found)
@@ -188,11 +191,16 @@ public: // PROPERTIES
 
 public:
 
+	bool RequestShadersReload();
 	bool DoReloadShaders();
 	bool DoOpenFolderWithShader();
 
-	bool IsNeedToReloadShaders();
-	void SetReloadShadersState(bool state);
+	// calculate absolute paths for vertex and fragment shaders
+	// return false in case a given effect file is not found under the expected location
+	bool CalculateShaderFilePaths(FBString& vertexShaderPath, FBString& fragmentShaderPath);
+
+	bool IsNeedToReloadShaders() const { return mReloadShaders; }
+	void SetReloadShadersState(bool state) { mReloadShaders = state; }
 
 	PostEffectBufferShader* GetUserShaderPtr() const { return mUserShader.get(); }
 

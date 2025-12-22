@@ -333,6 +333,9 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
                 {
                     standardEffectsCollection.ChangeContext();
                     fxContext->ChangeContext();
+					fxContext->Evaluate(pEvaluateInfoIn, pCamera, contextParameters);
+					fxContext->Synchronize();
+
                     pane.data->SetReloadShadersState(false);
                 }
 
@@ -636,82 +639,61 @@ const bool PostProcessContextData::CheckShadersPath(const char* path) const
 
 bool PostProcessContextData::LoadShaders()
 {
-    if (nullptr != mShaderSimple.get())
+    if (mShaderSimple.get())
     {
+        // already loaded
         return true;
     }
-    FBSystem& mSystem = FBSystem::TheOne();
-    FBString shaders_path(mSystem.ApplicationPath);
-    shaders_path = shaders_path + "\\plugins";
+    FBSystem& system = FBSystem::TheOne();
+    FBString shadersPath(system.ApplicationPath);
+    shadersPath = shadersPath + "\\plugins";
 
-    bool status = true;
-
-    if (!CheckShadersPath(shaders_path))
+    if (!CheckShadersPath(shadersPath))
     {
-        status = false;
-
-        const FBStringList& plugin_paths = mSystem.GetPluginPath();
+        bool found = false;
+        const FBStringList& plugin_paths = system.GetPluginPath();
 
         for (int i = 0; i < plugin_paths.GetCount(); ++i)
         {
             if (CheckShadersPath(plugin_paths[i]))
             {
-                shaders_path = plugin_paths[i];
-                status = true;
+                shadersPath = plugin_paths[i];
+                found = true;
                 break;
             }
         }
+
+        if (!found)
+        {
+            FBTrace("[PostProcessing] Failed to find simple shaders!\n");
+            return false;
+        }
     }
 
-    if (status == false)
+    auto pNewShader = std::make_unique<GLSLShaderProgram>();
+
+    FBString vertexPath(shadersPath, SHADER_SIMPLE_VERTEX);
+    FBString fragmentPath(shadersPath, SHADER_SIMPLE_FRAGMENT);
+
+    if (!pNewShader->LoadShaders(vertexPath, fragmentPath))
     {
-        FBTrace("[PostProcessing] Failed to find simple shaders!\n");
+        LOGE("Post Processing Simple Shader: %s\n", fragmentPath);
         return false;
     }
 
-    GLSLShaderProgram *pNewShader = nullptr;
-
-    try
+    // samplers and locations
+    if (pNewShader->Bind())
     {
-        pNewShader = new GLSLShaderProgram();
-
-        if (nullptr == pNewShader)
+        if (GLint loc = pNewShader->findLocation("sampler0"); loc >= 0)
         {
-            throw std::exception("failed to allocate memory for the simple shader");
-        }
-
-        FBString vertex_path(shaders_path, SHADER_SIMPLE_VERTEX);
-        FBString fragment_path(shaders_path, SHADER_SIMPLE_FRAGMENT);
-
-
-        if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
-        {
-            throw std::exception("failed to load and prepare simple shader");
-        }
-
-        // samplers and locations
-        pNewShader->Bind();
-
-        GLint loc = pNewShader->findLocation("sampler0");
-        if (loc >= 0)
             glUniform1i(loc, 0);
+        }
 
         pNewShader->UnBind();
-
-    }
-    catch (const std::exception &e)
-    {
-        FBTrace("Post Processing Simple Shader: %s\n", e.what());
-
-        delete pNewShader;
-        pNewShader = nullptr;
-
-        status = false;
     }
 
-    mShaderSimple.reset(pNewShader);
-
-    return status;
+    mShaderSimple = std::move(pNewShader);
+    return true;
 }
 
 void PostProcessContextData::FreeShaders()

@@ -109,6 +109,7 @@ void PostEffectContextMoBu::Synchronize()
 void PostEffectContextMoBu::ChangeContext()
 {
 	effectChain.ChangeContext();
+	shaderPropertyStorage.Clear();
 }
 
 bool PostEffectContextMoBu::IsReadyToRender() const

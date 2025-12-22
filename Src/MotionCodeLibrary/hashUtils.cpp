@@ -15,6 +15,67 @@
 
 #include "hashUtils.h"
 
+//
+
+#include <unordered_map>
+#include <string>
+#include <mutex>
+#include <cassert>
+
+class HashDebugRegistry
+{
+public:
+	static void Register(uint32_t hash, const char* str)
+	{
+		std::lock_guard<std::mutex> lock(GetMutex());
+		
+		auto [it, inserted] = GetMap().emplace(hash, str);
+		if (!inserted && it->second != str)
+		{
+			assert(false && "Hash collision detected!");
+		}
+	}
+
+	static const char* Resolve(uint32_t hash)
+	{
+		auto& map = GetMap();
+		auto it = map.find(hash);
+		return (it != map.end()) ? it->second.c_str() : "<unknown>";
+	}
+
+	static std::string& ResolveString(uint32_t hash)
+	{
+		static std::string unknown = "<unknown>";
+		auto& map = GetMap();
+		auto it = map.find(hash);
+		if (it != map.end())
+		{
+			static std::string result;
+			result = it->second;
+			return result;
+		}
+		return unknown;
+	}
+
+private:
+	static std::unordered_map<uint32_t, std::string>& GetMap()
+	{
+		static std::unordered_map<uint32_t, std::string> map;
+		return map;
+	}
+
+	static std::mutex& GetMutex()
+	{
+		static std::mutex m;
+		return m;
+	}
+};
+
+std::string& ResolveHash32(uint32_t hash)
+{
+	return HashDebugRegistry::ResolveString(hash);
+}
+
 ////////////////////////////////////////////////////////////////
 
 uint32_t xxhash32(const char* str, size_t len, uint32_t seed)
@@ -86,6 +147,9 @@ uint32_t xxhash32(const char* str, size_t len, uint32_t seed)
 	h32 ^= h32 >> 13;
 	h32 *= PRIME3;
 	h32 ^= h32 >> 16;
+
+	// debug registry
+	HashDebugRegistry::Register(h32, str);
 
 	return h32;
 }

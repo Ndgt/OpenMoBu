@@ -61,7 +61,7 @@ void EffectShaderUserObject::ActionReloadShaders(HIObject pObject, bool value)
 	EffectShaderUserObject* p = FBCast<EffectShaderUserObject>(pObject);
 	if (p && value)
 	{
-		p->DoReloadShaders();
+		p->RequestShadersReload();
 	}
 }
 
@@ -97,7 +97,8 @@ bool EffectShaderUserObject::FBCreate()
 	//FBPropertyPublish(this, RenderToTexture, "Render To Texture", nullptr, nullptr);
 	FBPropertyPublish(this, OutputVideo, "Output Video", nullptr, nullptr);
 
-	FBPropertyPublish(this, ShaderFile, "Shader File", nullptr, nullptr);
+	FBPropertyPublish(this, VertexFile, "Vertex File", nullptr, nullptr);
+	FBPropertyPublish(this, FragmentFile, "Shader File", nullptr, nullptr);
 	FBPropertyPublish(this, ReloadShaders, "Reload Shader", nullptr, ActionReloadShaders);
 	FBPropertyPublish(this, OpenFolder, "Open Folder", nullptr, ActionOpenFolder);
 
@@ -108,7 +109,8 @@ bool EffectShaderUserObject::FBCreate()
 
 	Resolution = eEffectResolutionOriginal;
 
-	ShaderFile = "//GLSL//test.glslf";
+	VertexFile = UserBufferShader::DEFAULT_VERTEX_SHADER_FILE;
+	FragmentFile = UserBufferShader::DEFAULT_FRAGMENT_SHADER_FILE;
 	NumberOfPasses = 1;
 	NumberOfPasses.SetMinMax(1.0, 12.0, true, true);
 
@@ -132,11 +134,50 @@ void EffectShaderUserObject::FBDestroy()
 	mUserShader.reset(nullptr);
 }
 
+bool EffectShaderUserObject::RequestShadersReload()
+{
+	mReloadShaders = true;
+	return true;
+}
+
+bool EffectShaderUserObject::CalculateShaderFilePaths(FBString& vertexShaderPath, FBString& fragmentShaderPath)
+{
+	const char* vertex_shader_rpath = VertexFile;
+	if (!vertex_shader_rpath || strlen(vertex_shader_rpath) < 2)
+	{
+		LOGE("[%s] Vertex File property is empty!\n", LongName.AsString());
+		return false;
+	}
+
+	const char* fragment_shader_rpath = FragmentFile;
+	if (!fragment_shader_rpath || strlen(fragment_shader_rpath) < 2)
+	{
+		LOGE("[%s] Fragment File property is empty!\n", LongName.AsString());
+		return false;
+	}
+
+	char vertex_abs_path_only[MAX_PATH];
+	char fragment_abs_path_only[MAX_PATH];
+	if (!FindEffectLocation(vertex_shader_rpath, vertex_abs_path_only, MAX_PATH)
+		|| !FindEffectLocation(fragment_shader_rpath, fragment_abs_path_only, MAX_PATH))
+	{
+		LOGE("[%s] Failed to find shaders location for %s, %s!\n", LongName.AsString(), vertex_shader_rpath, fragment_shader_rpath);
+		return false;
+	}
+
+	LOGI("[%s] Vertex shader Location - %s\n", LongName.AsString(), vertex_abs_path_only);
+	LOGI("[%s] Fragment shader Location - %s\n", LongName.AsString(), fragment_abs_path_only);
+
+	vertexShaderPath = FBString(vertex_abs_path_only, vertex_shader_rpath);
+	fragmentShaderPath = FBString(fragment_abs_path_only, fragment_shader_rpath);
+	return true;
+}
+
 bool EffectShaderUserObject::DoReloadShaders()
 {
 	// load a fragment shader from a given path and try to validate the shader and the program
 
-	const char* fragment_shader_rpath = ShaderFile;
+	const char* fragment_shader_rpath = FragmentFile;
 	if (!fragment_shader_rpath || strlen(fragment_shader_rpath) < 2)
 	{
 		LOGE("[%s] Shader File property is empty!\n", LongName.AsString());
@@ -228,7 +269,7 @@ bool OpenExplorerFolder(const std::filesystem::path& path)
 
 bool EffectShaderUserObject::DoOpenFolderWithShader()
 {
-	const char* fragment_shader_rpath = ShaderFile;
+	const char* fragment_shader_rpath = FragmentFile;
 	if (!fragment_shader_rpath || strlen(fragment_shader_rpath) < 2)
 	{
 		LOGE("[%s] Shader File property is empty!\n", LongName.AsString());
@@ -417,10 +458,28 @@ uint32_t UserBufferShader::GetNameHash() const
 	return SHADER_NAME_HASH;
 }
 
+const char* UserBufferShader::GetVertexFname(const int variationIndex) const 
+{ 
+	if (mUserObject)
+	{
+		return mUserObject->VertexFile.AsString();
+	}
+	return DEFAULT_VERTEX_SHADER_FILE; 
+}
+//! get a filename of a fragment shader, for this effect, returns a relative filename
+const char* UserBufferShader::GetFragmentFname(const int variationIndex) const 
+{ 
+	if (mUserObject)
+	{
+		return mUserObject->FragmentFile.AsString();
+	}
+	return DEFAULT_FRAGMENT_SHADER_FILE; 
+}
+
 /// new feature to have several passes for a specified effect
 int UserBufferShader::GetNumberOfPasses() const
 {
-	return mUserObject->NumberOfPasses;
+	return (mUserObject) ? mUserObject->NumberOfPasses : 1;
 }
 //! initialize a specific path for drawing
 bool UserBufferShader::OnRenderPassBegin(const int pass, PostEffectRenderContext& renderContext)

@@ -9,6 +9,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 */
 
 #include "shaderpropertyvalue.h"
+#include <mobu_logging.h>
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -16,6 +17,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 void ShaderPropertyValue::SetType(EPropertyType newType)
 {
+	VERIFY(newType != EPropertyType::NONE);
+
 	type = newType;
 	switch (newType) {
 	case EPropertyType::INT:

@@ -74,8 +74,10 @@ bool EffectShaderBilateralBlurUserObject::FBCreate()
 	FBPropertyPublish(this, BlurScale, BLUR_SCALE_LABEL, nullptr, nullptr);
 
 	BlurScale = FBVector2d(1.0, 1.0);
-	ShaderFile = PostEffectShaderBilateralBlur::FRAGMENT_SHADER_FILE;
-	ShaderFile.ModifyPropertyFlag(FBPropertyFlag::kFBPropertyFlagReadOnly, true);
+	VertexFile = PostEffectShaderBilateralBlur::VERTEX_SHADER_FILE;
+	VertexFile.ModifyPropertyFlag(FBPropertyFlag::kFBPropertyFlagReadOnly, true);
+	FragmentFile = PostEffectShaderBilateralBlur::FRAGMENT_SHADER_FILE;
+	FragmentFile.ModifyPropertyFlag(FBPropertyFlag::kFBPropertyFlagReadOnly, true);
 	NumberOfPasses.ModifyPropertyFlag(FBPropertyFlag::kFBPropertyFlagReadOnly, true);
 	UniqueClassId = 63;
 

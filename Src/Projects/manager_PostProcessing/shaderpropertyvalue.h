@@ -147,5 +147,4 @@ private:
 
 	bool doInvertValue{ false };
 
-	int8_t padding[3]{ 0 };
 };

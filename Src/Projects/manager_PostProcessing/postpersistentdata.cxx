@@ -127,7 +127,7 @@ PostPersistentData::PostPersistentData(const char* pName, HIObject pObject)
 {
     FBClassInit;
 
-	mReloadShaders = false;
+	SetReloadShadersState(false);
 	mLazyLoadCounter = 0;
 }
 
@@ -1177,11 +1177,9 @@ bool PostPersistentData::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObjectStore pS
     return false;
 }
 
-
-
 void PostPersistentData::DoReloadShaders()
 {
-	mReloadShaders = true;
+	SetReloadShadersState(true);
 }
 
 void PostPersistentData::DoDebugFarDist()
@@ -1283,16 +1281,6 @@ void PostPersistentData::DoFixCameraSettings()
 
 		FBMessageBox("Post Processing", buf, "Ok");
 	}
-}
-
-bool PostPersistentData::IsNeedToReloadShaders()
-{
-	return mReloadShaders;
-}
-
-void PostPersistentData::SetReloadShadersState(bool state)
-{
-	mReloadShaders = state;
 }
 
 bool PostPersistentData::PlugNotify(FBConnectionAction pAction, FBPlug* pThis, int pIndex, FBPlug* pPlug, FBConnectionType pConnectionType, FBPlug* pNewPlug)

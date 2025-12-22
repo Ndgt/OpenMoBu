@@ -534,8 +534,8 @@ public:
 
 	void DoResetDOF();
 
-	bool IsNeedToReloadShaders();
-	void SetReloadShadersState(bool state);
+	bool IsNeedToReloadShaders() const { return mReloadShaders; }
+	void SetReloadShadersState(bool state) { mReloadShaders = state; }
 
 	void SetPreviewTextureId(unsigned int id, double ratio, 
 		unsigned int w, unsigned int h, int uncomporessSize, 

@@ -384,8 +384,9 @@ void IEffectShaderConnections::ShaderProperty::ReadTextureConnections(ShaderProp
 
 	if (!isFound)
 	{
+		// not assigned object, which could be just a procedural applied current source buffer's texture
 		value.texture = nullptr;
 		value.shaderUserObject = nullptr;
-		value.SetType(EPropertyType::NONE);
+		value.SetType(EPropertyType::TEXTURE);
 	}
 }

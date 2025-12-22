@@ -33,6 +33,9 @@ public:
 
 	FBComponent* GetOwner() const { return mOwner; }
 
+	bool IsActive() const { return isActive; }
+	void SetActive(const bool value) { isActive = value; }
+
 	/// number of variations of the same effect, but with a different algorithm (for instance, 3 ways of making a lens flare effect)
 	virtual int GetNumberOfVariations() const abstract;
 
@@ -169,6 +172,7 @@ protected:
 
 	int mCurrentShader{ 0 }; //!< current variance of a shader
 	bool bHasShaderChanged{ false };
+	bool isActive{ true };
 	std::vector<std::unique_ptr<GLSLShaderProgram>>	mShaders; //!< store a list of all variances
 
 	void SetCurrentShader(const int index);

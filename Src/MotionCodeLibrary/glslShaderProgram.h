@@ -137,6 +137,10 @@ bool	LoadShaders( GLhandleARB	_vertex,	const char* fragment_file );
 	GLhandleARB		GetProgramObj() const {
 		return programObj;
 	}
+
+	bool IsValid() const {
+		return (programObj != 0);
+	}
 };
 
 #endif // GLSLSHADER_H_INCLUDED

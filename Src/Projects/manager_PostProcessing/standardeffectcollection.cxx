@@ -59,7 +59,7 @@ void StandardEffectCollection::ChangeContext()
 
 bool StandardEffectCollection::PreparationToRender()
 {
-	bool lSuccess = true;// pData != nullptr;
+	bool lSuccess = true;
 
 	if (mNeedReloadShaders)
 	{
@@ -71,7 +71,6 @@ bool StandardEffectCollection::PreparationToRender()
 
 	return lSuccess;
 }
-
 
 PostEffectBase* StandardEffectCollection::ShaderFactory(const BuildInEffect effectType, const char *shadersLocation, bool immediatelyLoad)
 {
