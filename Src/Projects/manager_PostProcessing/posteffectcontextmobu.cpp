@@ -15,6 +15,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectchain.h"
 #include "shaderpropertystorage.h"
 #include "standardeffectcollection.h"
+#include "posteffect_userobject.h"
 
 
 PostEffectContextMoBu::PostEffectContextMoBu(FBCamera* cameraIn,
@@ -115,6 +116,48 @@ void PostEffectContextMoBu::ChangeContext()
 bool PostEffectContextMoBu::IsReadyToRender() const
 {
 	return effectChain.IsReadyToRender();
+}
+
+bool PostEffectContextMoBu::ReloadShaders()
+{
+	if (!effectCollection || !postProcessData)
+	{
+		return false;
+	}
+
+	// standard effects
+	constexpr const bool propagateToUserEffects = false;
+	if (postProcessData->IsNeedToReloadShaders(propagateToUserEffects))
+	{
+		effectCollection->ChangeContext();
+		if (!effectCollection->ReloadShaders())
+		{
+			return false;
+		}
+	}
+
+	// user effects
+
+	if (postProcessData->IsExternalReloadRequested())
+	{
+		for (int i = 0; i < postProcessData->UserEffects.GetCount(); ++i)
+		{
+			FBComponent* component = postProcessData->UserEffects.GetAt(i);
+			PostEffectUserObject* userEffect = FBCast<PostEffectUserObject>(component);
+			if (userEffect)
+			{
+				if (userEffect->IsNeedToReloadShaders())
+				{
+					if (!userEffect->DoReloadShaders(&shaderPropertyStorage.GetReadEffectMap()))
+					{
+						return false;
+					}
+				}
+			}
+		}
+	}
+
+	return true;
 }
 
 bool PostEffectContextMoBu::Render(FBEvaluateInfo* pEvaluateInfoIn, PostEffectBuffers* buffers)

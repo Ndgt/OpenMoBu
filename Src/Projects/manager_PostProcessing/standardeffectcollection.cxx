@@ -57,7 +57,7 @@ void StandardEffectCollection::ChangeContext()
 	mNeedReloadShaders = true;
 }
 
-bool StandardEffectCollection::PreparationToRender()
+bool StandardEffectCollection::ReloadShaders()
 {
 	bool lSuccess = true;
 
@@ -70,6 +70,44 @@ bool StandardEffectCollection::PreparationToRender()
 	}
 
 	return lSuccess;
+}
+
+bool StandardEffectCollection::IsOk() const
+{
+	if (!mFishEye.get())
+		return false;
+	if (!mColor.get())
+		return false;
+	if (!mVignetting.get())
+		return false;
+	if (!mFilmGrain.get())
+		return false;
+	if (!mLensFlare.get())
+		return false;
+	if (!mSSAO.get())
+		return false;
+	if (!mDOF.get())
+		return false;
+	if (!mDisplacement.get())
+		return false;
+	
+	if (!mEffectDepthLinearize.get())
+		return false;
+	if (!mMotionBlur.get())
+		return false;
+	if (!mEffectBilateralBlur.get())
+		return false;
+	if (!mEffectBlur.get())
+		return false;
+	if (!mEffectMix.get())
+		return false;
+	if (!mEffectDownscale.get())
+		return false;
+
+	if (!mShaderSceneMasked.get() || !mShaderSceneMasked->IsValid())
+		return false;
+
+	return true;
 }
 
 PostEffectBase* StandardEffectCollection::ShaderFactory(const BuildInEffect effectType, const char *shadersLocation, bool immediatelyLoad)

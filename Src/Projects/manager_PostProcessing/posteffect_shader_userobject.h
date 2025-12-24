@@ -160,6 +160,9 @@ public:
     //--- FiLMBOX Construction/Destruction,
     virtual bool FBCreate() override;        //!< FiLMBOX Creation function.
     virtual void FBDestroy() override;       //!< FiLMBOX Destruction function.
+	virtual bool FbxRetrieve(FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat) override;
+
+	virtual bool PlugNotify(FBConnectionAction pAction, FBPlug* pThis, int pIndex, FBPlug* pPlug, FBConnectionType pConnectionType, FBPlug* pNewPlug) override;
 
     
 	void CopyValues(EffectShaderUserObject* pOther);
@@ -192,7 +195,7 @@ public: // PROPERTIES
 public:
 
 	bool RequestShadersReload();
-	bool DoReloadShaders();
+	bool DoReloadShaders(ShaderPropertyStorage::EffectMap* effectPropertiesMap);
 	bool DoOpenFolderWithShader();
 
 	// calculate absolute paths for vertex and fragment shaders

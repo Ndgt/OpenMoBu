@@ -46,7 +46,8 @@ public:
 	
 	bool			mSchematicView[4];
 	bool			mVideoRendering = false;
-	bool isReadyToEvaluate{ false };
+	std::atomic<bool> isReadyToEvaluate{ false };
+	std::atomic<bool> isNeedToResetPaneSettings{ false };
 
 	int				mViewport[4];		// x, y, width, height
 	int				mViewerViewport[4];
@@ -94,9 +95,7 @@ public:
 	std::unique_ptr<PostEffectBuffers> mEffectBuffers3;
 
 	void    Init();
-	// once we load file, we should reset pane user object pointers 
-	// and wait for next PrepPaneSettings call
-	void	ResetPaneSettings();
+	
 
 	void	PreRenderFirstEntry();
 
@@ -108,7 +107,18 @@ public:
 	bool	RenderAfterRender(bool processCompositions, bool renderToBuffer, 
 		FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn);
 
-	//const PostEffectChain& GetEffectChain() const { return mEffectChain; }
+	// thread-safe, atomic read the ready to evaluate flag
+	bool IsReadyToEvaluate() const;
+	// thread-safe, atomic update the ready to evaluate flag
+	void SetReadyToEvaluate(bool ready);
+
+	bool IsNeedToResetPaneSettings() const;
+	void SetNeedToResetPaneSettings(bool reset);
+
+	bool HasAnyShadersReloadRequests(PostPersistentData* data) const;
+	void ClearShadersReloadRequests(PostPersistentData* data);
+	void ReloadShaders(PostPersistentData* data, PostEffectContextMoBu* fxContext,
+		FBEvaluateInfo* pEvaluateInfoIn, FBCamera* pCamera, const PostEffectContextProxy::Parameters& contextParameters);
 
 private:
     bool EmptyGLErrorStack();
@@ -122,6 +132,9 @@ private:
 
 	void	FreeBuffers();
 
+	// once we load file, we should reset pane user object pointers 
+	// and wait for next PrepPaneSettings call
+	void	ResetPaneSettings();
 
 	void	DrawHUD(int panex, int paney, int panew, int paneh, int vieww, int viewh);
 	void	DrawHUDRect(FBHUDRectElement *pElem, int panex, int paney, int panew, int paneh, int vieww, int viewh);

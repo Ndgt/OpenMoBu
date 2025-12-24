@@ -10,6 +10,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 // Class declaration
 #include "posteffect_shader_userobject.h"
+#include "posteffect_userobject.h"
 #include "postprocessing_ini.h"
 #include <vector>
 #include <limits>
@@ -134,9 +135,66 @@ void EffectShaderUserObject::FBDestroy()
 	mUserShader.reset(nullptr);
 }
 
+bool EffectShaderUserObject::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat)
+{
+	if (pStoreWhat == kFbxObjectStore::kCleanup)
+	{
+		RequestShadersReload();
+	}
+
+	return ParentClass::FbxRetrieve(pFbxObject, pStoreWhat);
+}
+
+bool EffectShaderUserObject::PlugNotify(FBConnectionAction pAction, FBPlug* pThis, int pIndex, FBPlug* pPlug, FBConnectionType pConnectionType, FBPlug* pNewPlug)
+{
+	if (FBIS(pPlug, EffectShaderUserObject))
+	{
+		if (pAction == kFBConnectedSrc)
+		{
+			ConnectSrc(pPlug);
+		}
+		else if (pAction == kFBDisconnectedSrc)
+		{
+			DisconnectSrc(pPlug);
+		}
+	}
+
+	return ParentClass::PlugNotify(pAction, pThis, pIndex, pPlug, pConnectionType, pNewPlug);
+}
+
+
 bool EffectShaderUserObject::RequestShadersReload()
 {
 	mReloadShaders = true;
+	for (int i=0; i<GetDstCount(); ++i)
+	{
+		FBPlug* dstPlug = GetDst(i);
+		
+		if (FBIS(dstPlug, PostPersistentData))
+		{
+			if (PostPersistentData* persistentData = static_cast<PostPersistentData*>(dstPlug))
+			{
+				constexpr const bool isExternal{ true };
+				constexpr const bool propagateToCustomEffects{ false };
+
+				persistentData->RequestShadersReload(isExternal, propagateToCustomEffects);
+			}
+		}
+		else if (FBIS(dstPlug, PostEffectUserObject))
+		{
+			if (PostEffectUserObject* effectObj = static_cast<PostEffectUserObject*>(dstPlug))
+			{
+				effectObj->RequestShadersReload();
+			}
+		}
+		else if (FBIS(dstPlug, EffectShaderUserObject))
+		{
+			if (EffectShaderUserObject* effectShaderObj = static_cast<EffectShaderUserObject*>(dstPlug))
+			{
+				effectShaderObj->RequestShadersReload();
+			}
+		}
+	}
 	return true;
 }
 
@@ -173,49 +231,26 @@ bool EffectShaderUserObject::CalculateShaderFilePaths(FBString& vertexShaderPath
 	return true;
 }
 
-bool EffectShaderUserObject::DoReloadShaders()
+bool EffectShaderUserObject::DoReloadShaders(ShaderPropertyStorage::EffectMap* effectMap)
 {
-	// load a fragment shader from a given path and try to validate the shader and the program
-
-	const char* fragment_shader_rpath = FragmentFile;
-	if (!fragment_shader_rpath || strlen(fragment_shader_rpath) < 2)
-	{
-		LOGE("[%s] Shader File property is empty!\n", LongName.AsString());
-		return false;
-	}
-
-	constexpr const char* vertex_shader_rpath = "/GLSL/simple130.glslv";
-
-	char vertex_abs_path_only[MAX_PATH];
-	char fragment_abs_path_only[MAX_PATH];
-	if (!FindEffectLocation(vertex_shader_rpath, vertex_abs_path_only, MAX_PATH)
-		|| !FindEffectLocation(fragment_shader_rpath, fragment_abs_path_only, MAX_PATH))
-	{
-		LOGE("[%s] Failed to find shaders location for %s, %s!\n", LongName.AsString(), vertex_shader_rpath, fragment_shader_rpath);
-		return false;
-	}
-
-	LOGI("[%s] Vertex shader Location - %s\n", LongName.AsString(), vertex_abs_path_only);
-	LOGI("[%s] Fragment shader Location - %s\n", LongName.AsString(), fragment_abs_path_only);
-
-	FBString vertex_path(vertex_abs_path_only, vertex_shader_rpath);
-	FBString fragment_path(fragment_abs_path_only, fragment_shader_rpath);
+	FBString vertexPath, fragmentPath;
+	CalculateShaderFilePaths(vertexPath, fragmentPath);
 
 	// NOTE: prep uniforms when load is succesfull
 	constexpr int variationIndex = 0;
-	if (!mUserShader->Load(variationIndex, vertex_path, fragment_path))
+	if (!mUserShader->Load(variationIndex, vertexPath, fragmentPath))
 	{
-		LOGE("[%s] Failed to load shaders for %s, %s!\n", LongName.AsString(), vertex_path, fragment_path);
+		LOGE("[%s] Failed to load shaders for %s, %s!\n", LongName.AsString(), vertexPath, fragmentPath);
 		return false;
 	}
 	
 	// reload connected input buffers
 	if (PostEffectBufferShader* bufferShader = GetUserShaderPtr())
 	{
-		if (!bufferShader->ReloadPropertyShaders())
+		if (!bufferShader->ReloadPropertyShaders(effectMap))
 			return false;
 	}
-	
+	SetReloadShadersState(false);
 	return true;
 }
 

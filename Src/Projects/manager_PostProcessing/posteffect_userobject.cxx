@@ -224,20 +224,40 @@ void PostEffectUserObject::RequestShadersReload()
 {
 	mReloadShaders = true;
 
+	for (int i = 0; i < GetDstCount(); ++i)
+	{
+		FBPlug* dstPlug = GetDst(i);
+
+		if (FBIS(dstPlug, PostPersistentData))
+		{
+			if (PostPersistentData* persistentData = static_cast<PostPersistentData*>(dstPlug))
+			{
+				constexpr const bool isExternal{ true };
+				constexpr const bool propagateToCustomEffects{ false };
+
+				persistentData->RequestShadersReload(isExternal, propagateToCustomEffects);
+			}
+		}
+	}
+}
+
+bool PostEffectUserObject::DoReloadShaders(ShaderPropertyStorage::EffectMap* effectPropertiesMap)
+{
 	for (int i = 0; i < BufferShaders.GetCount(); ++i)
 	{
 		if (FBIS(BufferShaders[i], EffectShaderUserObject))
 		{
 			if (EffectShaderUserObject* UserObject = FBCast<EffectShaderUserObject>(BufferShaders[i]))
 			{
-				if (!UserObject->DoReloadShaders())
+				if (!UserObject->DoReloadShaders(effectPropertiesMap))
 				{
-					// TODO: stop reloading of next shaders if something failed
-					break;
+					return false;
 				}
 			}
 		}
 	}
+	mReloadShaders = false;
+	return true;
 }
 
 bool PostEffectUserObject::IsDepthSamplerUsed() const

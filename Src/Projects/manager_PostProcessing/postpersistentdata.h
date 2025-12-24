@@ -524,8 +524,6 @@ public:
 	void DoDebugFarDist();
 	void DoFixCameraSettings();
 
-	void DoReloadShaders();
-
 	void DoFocusObjectCreate();
 	void DoFocusObjectSelect();
 
@@ -534,8 +532,11 @@ public:
 
 	void DoResetDOF();
 
-	bool IsNeedToReloadShaders() const { return mReloadShaders; }
-	void SetReloadShadersState(bool state) { mReloadShaders = state; }
+	void RequestShadersReload(bool isExternal = true, bool doPropagateToUserEffects = false);
+	bool IsNeedToReloadShaders(bool doPropagateToUserEffects=true);
+	bool IsExternalReloadRequested();
+	void SetReloadShadersState(bool state, bool doPropagateToUserEffects=true);
+	void ClearReloadFlags();
 
 	void SetPreviewTextureId(unsigned int id, double ratio, 
 		unsigned int w, unsigned int h, int uncomporessSize, 
@@ -543,8 +544,6 @@ public:
 
 	void PushClipSettings(double upper, double lower);
 	void PopClipSettings();
-
-	bool IsLazyLoadReady() { mLazyLoadCounter = (mLazyLoadCounter >= 0) ? mLazyLoadCounter-1 : -1; return mLazyLoadCounter < 0; }
 
 	/// <summary>
 	/// return true if masking is activated globally or in any effect in particular
@@ -561,12 +560,14 @@ public:
 	int GetNumberOfActiveUserEffects();
 	PostEffectBase* GetActiveUserEffect(const int index);
 	PostEffectUserObject* GetActiveUserEffectObject(const int index);
+	bool HasAnyUserEffectWithReloadRequest();
 
 protected:
 
 	friend class ToolPostProcessing;
 
     FBString			mText;
+	bool				mReloadExternal{ false };
 	bool				mReloadShaders{ false };
 	EPostAction			mPostAction{ EPostAction::ePostActionNone };
 
@@ -574,8 +575,6 @@ protected:
 
 	double				mTempLower{ 0.0 };
 	double				mTempUpper{ 0.0 };
-
-	int			mLazyLoadCounter{ 0 };
 
 	void		DefaultValues();
 	void		LoadFromConfig(const char *sessionFilter=nullptr);

@@ -133,6 +133,7 @@ public:
 	bool IsReadyAndActive() const;
 
 	void RequestShadersReload();
+	bool DoReloadShaders(ShaderPropertyStorage::EffectMap* effectPropertiesMap);
 
 	bool IsNeedToReloadShaders() const { return mReloadShaders; }
 	void SetReloadShadersState(bool state) { mReloadShaders = state; }

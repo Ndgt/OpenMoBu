@@ -324,35 +324,38 @@ bool PostEffectBufferShader::CollectUIValues(FBComponent* component, PostEffectC
 	return OnCollectUI(effectContext, maskIndex);
 }
 
-bool PostEffectBufferShader::ReloadPropertyShaders()
+bool PostEffectBufferShader::ReloadPropertyShaders(ShaderPropertyStorage::EffectMap* effectMap)
 {
 	bHasShaderChanged = true;
 
-	// TODO: move this to evaluation thread and shader property storage access
-	/*
-	for (auto& [key, shaderProperty] : mProperties)
-	{
-		if (!shaderProperty.GetFBProperty())
-			continue;
+	const uint32_t effectNameHash = GetNameHash();
 
-		if (shaderProperty.GetType() == IEffectShaderConnections::EPropertyType::SHADER_USER_OBJECT
-			&& shaderProperty.GetShaderUserObject())
+	auto iter = effectMap->find(effectNameHash);
+	if (iter != effectMap->end())
+	{
+		for (const ShaderPropertyValue& value : iter->second)
 		{
-			EffectShaderUserObject* shaderUserObject = shaderProperty.GetShaderUserObject();
-			if (!shaderUserObject->DoReloadShaders())
+			if (value.GetType() == EPropertyType::SHADER_USER_OBJECT
+				&& value.shaderUserObject)
 			{
-				return false;
+				if (value.shaderUserObject->IsNeedToReloadShaders())
+				{
+					if (!value.shaderUserObject->DoReloadShaders(effectMap))
+					{
+						return false;
+					}
+				}
 			}
 		}
 	}
-	*/
+
 	return true;
 }
 
 int PostEffectBufferShader::GetNumberOfSourceShaders(const PostEffectContextProxy* effectContext) const
 {
 	int count = 0;
-	const uint32_t effectNameHash = GetNameHash();// nameContext.GetNameHash();
+	const uint32_t effectNameHash = GetNameHash();
 	if (const ShaderPropertyStorage::PropertyValueMap* readMap = effectContext->GetEffectPropertyValueMap(effectNameHash))
 	{
 		for (const ShaderPropertyValue& value : *readMap)
@@ -544,10 +547,18 @@ void PostEffectBufferShader::PreRender(PostEffectRenderContext& renderContext, P
 
 	for (ShaderPropertyValue* propValue : sourceShaders)
 	{
-		const EffectShaderUserObject* userObject = propValue->shaderUserObject;
+		EffectShaderUserObject* userObject = propValue->shaderUserObject;
 		PostEffectBufferShader* bufferShader = userObject->GetUserShaderPtr();
 		if (!bufferShader)
 			continue;
+
+		if (userObject->IsNeedToReloadShaders())
+		{
+			if (!userObject->DoReloadShaders(effectContext->GetEffectPropertyMap()))
+			{
+				continue;
+			}
+		}
 
 		// bind sampler from another rendered buffer shader
 		const std::string bufferName = std::string(GetName()) + "_" + std::string(userObject->LongName);

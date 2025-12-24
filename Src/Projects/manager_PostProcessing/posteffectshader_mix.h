@@ -104,6 +104,8 @@ public: // PROPERTIES
 	FBPropertyAnimatableDouble		BloomTone;
 	FBPropertyAnimatableDouble		BloomStretch;
 
+	FBPropertyAnimatableDouble		Inverse;
+
 protected:
 
 	virtual PostEffectBufferShader* MakeANewClassInstance() override {

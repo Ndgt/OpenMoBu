@@ -64,7 +64,9 @@ public:
 	// notify about graphics context change, clear all hardware resources
 	void ChangeContext();
 
+	bool ReloadShaders();
 
+	// check if we have needed connected data
 	bool IsReadyToRender() const;
 
 	bool Render(FBEvaluateInfo* pEvaluateInfoIn, 

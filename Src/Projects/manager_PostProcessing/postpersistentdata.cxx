@@ -128,7 +128,6 @@ PostPersistentData::PostPersistentData(const char* pName, HIObject pObject)
     FBClassInit;
 
 	SetReloadShadersState(false);
-	mLazyLoadCounter = 0;
 }
 
 void PostPersistentData::ActionReloadShaders(HIObject pObject, bool value)
@@ -136,7 +135,10 @@ void PostPersistentData::ActionReloadShaders(HIObject pObject, bool value)
 	PostPersistentData *p = FBCast<PostPersistentData>(pObject);
 	if (p && value)
 	{
-		p->DoReloadShaders();
+		constexpr const bool isExternal{ false };
+		constexpr const bool propagateToCustomEffects{ true };
+
+		p->RequestShadersReload(isExternal, propagateToCustomEffects);
 	}
 }
 
@@ -1165,21 +1167,25 @@ bool PostPersistentData::FbxStore(FBFbxObject* pFbxObject, kFbxObjectStore pStor
 
 bool PostPersistentData::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat)
 {
-	constexpr int LAZY_COUNTER_VALUE{ 500 };
-
-    if( pStoreWhat == kAttributes )
+    if( pStoreWhat == kCleanup )
     {
-        //Retrieve default text
-        //mText = pFbxObject->FieldReadC("Text");
-		mLazyLoadCounter = LAZY_COUNTER_VALUE;
+		mReloadShaders = true;
+		mReloadExternal = true;
     }
 
     return false;
 }
 
-void PostPersistentData::DoReloadShaders()
+void PostPersistentData::RequestShadersReload(bool isExternal, bool doPropagateToUserEffects)
 {
-	SetReloadShadersState(true);
+	if (isExternal)
+	{
+		mReloadExternal = true;
+	}
+	else
+	{
+		SetReloadShadersState(doPropagateToUserEffects);
+	}
 }
 
 void PostPersistentData::DoDebugFarDist()
@@ -1301,6 +1307,8 @@ bool PostPersistentData::PlugNotify(FBConnectionAction pAction, FBPlug* pThis, i
 		if (pAction == kFBConnectedSrc)
 		{
 			ConnectSrc(pPlug);
+			// if the connected shader has a pending reload flag, let's propagate to the given persistent data
+			mReloadExternal = true;
 		}
 		else if (pAction == kFBDisconnectedSrc)
 		{
@@ -1493,15 +1501,15 @@ void PostPersistentData::OnUIIdle(HISender pSender, HKEvent pEvent)
 
 		if (FocusObject.GetCount() > 0)
 		{
-			int userChooise = FBMessageBox("Post Processing", "Focus Object is already assigned.\n What do you want to do with existing?", "Delete", "Disconnect", "Cancel");
-			if (1 == userChooise)
+			int userChoice = FBMessageBox("Post Processing", "Focus Object is already assigned.\n What do you want to do with existing?", "Delete", "Disconnect", "Cancel");
+			if (1 == userChoice)
 			{
 				FBModel *pModel = (FBModel*)FocusObject.GetAt(0);
 				FocusObject.RemoveAll();
 				pModel->FBDelete();
 				pModel = nullptr;
 			}
-			else if (2 == userChooise)
+			else if (2 == userChoice)
 			{
 				FocusObject.RemoveAll();
 			}
@@ -1738,6 +1746,61 @@ int PostPersistentData::GetNumberOfActiveUserEffects()
 		}
 	}
 	return count;
+}
+
+bool PostPersistentData::IsNeedToReloadShaders(bool doPropagateToUserEffects)
+{
+	if (doPropagateToUserEffects && HasAnyUserEffectWithReloadRequest())
+	{
+		return true;
+	}
+	return mReloadShaders; 
+}
+
+bool PostPersistentData::IsExternalReloadRequested()
+{
+	return mReloadExternal;
+}
+
+void PostPersistentData::SetReloadShadersState(bool state, bool doPropagateToUserEffects)
+{ 
+	mReloadShaders = state; 
+	if (doPropagateToUserEffects)
+	{
+		mReloadExternal = state;
+		for (int i = 0; i < UserEffects.GetCount(); ++i)
+		{
+			if (FBIS(UserEffects[i], PostEffectUserObject))
+			{
+				if (PostEffectUserObject* userObject = FBCast<PostEffectUserObject>(UserEffects[i]))
+				{
+					userObject->SetReloadShadersState(state);
+				}
+			}
+		}
+	}
+}
+
+void PostPersistentData::ClearReloadFlags()
+{
+	mReloadExternal = false;
+	mReloadShaders = false;
+}
+
+bool PostPersistentData::HasAnyUserEffectWithReloadRequest()
+{
+	for (int i = 0; i < UserEffects.GetCount(); ++i)
+	{
+		if (FBIS(UserEffects[i], PostEffectUserObject))
+		{
+			PostEffectUserObject* UserObject = FBCast<PostEffectUserObject>(UserEffects[i]);
+			if (UserObject && UserObject->Active && UserObject->IsNeedToReloadShaders())
+			{
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 PostEffectBase* PostPersistentData::GetActiveUserEffect(const int index)

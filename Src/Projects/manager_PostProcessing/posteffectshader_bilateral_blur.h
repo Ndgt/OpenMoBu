@@ -95,9 +95,6 @@ public: // PROPERTIES
 
 	FBPropertyVector2d		BlurScale;
 
-	// TODO: could be connected to buildin texture ids, scene texture or another rendered effect shader
-	//FBPropertyEnum<EShaderInputSampler2D> InputTexture;
-
 protected:
 
 	virtual PostEffectBufferShader* MakeANewClassInstance() override {

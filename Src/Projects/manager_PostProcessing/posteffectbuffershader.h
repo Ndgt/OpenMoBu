@@ -137,7 +137,8 @@ public:
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	bool CollectUIValues(FBComponent* component, PostEffectContextProxy* effectContext, int maskIndex) override;
 
-	bool ReloadPropertyShaders();
+	// look for a connected input effect shaders and reload them if needed
+	bool ReloadPropertyShaders(ShaderPropertyStorage::EffectMap* effectMap);
 
 protected:
 

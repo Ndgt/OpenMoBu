@@ -32,7 +32,7 @@ void PostProcessContextData::Init()
     mVideoRendering = false;
     mEvaluatePaneCount = 0;
     mRenderPaneCount = 0;
-    isReadyToEvaluate = false;
+	SetReadyToEvaluate(false);
 
     for (int i = 0; i < 4; ++i)
     {
@@ -51,11 +51,12 @@ void PostProcessContextData::Init()
 
 void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluteInfoIn)
 {
-    if (!isReadyToEvaluate)
+    if (!IsReadyToEvaluate() || FBMergeTransactionIsOn())
     {
+        // in a process of shaders reloading, skip evaluation for now
         return;
     }
-
+    
     systemTime = systemTime - mStartSystemTime;
 
     const double sysTimeSecs = systemTime.GetSecondDouble();
@@ -83,8 +84,14 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEva
         const SPaneData& pane = mEvaluatePanes[nPane];
         FBCamera* pCamera = pane.camera;
 
-        if (!pane.data || pane.data->IsNeedToReloadShaders() || !pCamera)
+        if (!pane.data || HasAnyShadersReloadRequests(pane.data) || !pCamera)
             continue;
+
+        auto iter = mPostFXContextsMap.find(pane.data);
+        if (iter == mPostFXContextsMap.end())
+        {
+            continue;
+		}
 
 		int viewportWidth = pCamera->CameraViewportWidth;
 		int viewportHeight = pCamera->CameraViewportHeight;
@@ -102,26 +109,26 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEva
 		contextParameters.w = viewportWidth;
 		contextParameters.h = viewportHeight;
 
-        auto iter = mPostFXContextsMap.find(pane.data);
-        if (iter == end(mPostFXContextsMap))
+        if (PostEffectContextMoBu* fxContext = iter->second.get())
         {
-            // create new context
-            auto effectContext = new PostEffectContextMoBu(pCamera, nullptr, pane.data, pEvaluteInfoIn, &standardEffectsCollection, contextParameters);
-            mPostFXContextsMap.emplace(pane.data, effectContext);
-            iter = mPostFXContextsMap.find(pane.data);
-		}
-
-		PostEffectContextMoBu* fxContext = iter->second.get();
-		fxContext->Evaluate(pEvaluteInfoIn, pCamera, contextParameters);
+            fxContext->Evaluate(pEvaluteInfoIn, pCamera, contextParameters);
+        }
     }
 }
 
 void PostProcessContextData::Synchronize()
 {
-    isReadyToEvaluate = false;
+    if (IsNeedToResetPaneSettings())
+    {
+        // reset all pane settings
+        ResetPaneSettings();
+        SetNeedToResetPaneSettings(false);
+        return;
+	}
 
     // sync mEvaluatePanes with mRenderPanes
     mEvaluatePaneCount = mRenderPaneCount;
+	bool isReady = false;
 
     for (int nPane = 0; nPane < mEvaluatePaneCount; ++nPane)
     {
@@ -131,20 +138,70 @@ void PostProcessContextData::Synchronize()
         if (!evalPane.data || !evalPane.camera)
             continue;
 
-        if (evalPane.data->IsNeedToReloadShaders())
+        // Get or create fx context
+        auto [it, inserted] = mPostFXContextsMap.try_emplace(evalPane.data, nullptr);
+
+        if (inserted || !it->second.get())
         {
-            isReadyToEvaluate = false;
+            static const PostEffectContextProxy::Parameters emptyParameters{};
+            it->second = std::make_unique<PostEffectContextMoBu>(evalPane.camera, nullptr, evalPane.data, nullptr,
+				&standardEffectsCollection, emptyParameters);
+        }
+
+        if (HasAnyShadersReloadRequests(evalPane.data))
+        {
+            isReady = false;
             break;
 		}
 
-        auto iter = mPostFXContextsMap.find(evalPane.data);
-        if (iter != end(mPostFXContextsMap))
-        {
-            PostEffectContextMoBu* fxContext = iter->second.get();
-            fxContext->Synchronize();
-		}
-        isReadyToEvaluate = true;
+        it->second->Synchronize();
+		isReady = true;
     }
+	SetReadyToEvaluate(isReady);
+}
+
+bool PostProcessContextData::IsReadyToEvaluate() const
+{
+	return isReadyToEvaluate.load(std::memory_order_acquire);
+}
+void PostProcessContextData::SetReadyToEvaluate(bool ready)
+{
+	isReadyToEvaluate.store(ready, std::memory_order_release);
+}
+
+bool PostProcessContextData::IsNeedToResetPaneSettings() const
+{
+	return isNeedToResetPaneSettings.load(std::memory_order_acquire);
+}
+
+void PostProcessContextData::SetNeedToResetPaneSettings(bool reset)
+{
+	isNeedToResetPaneSettings.store(reset, std::memory_order_release);
+}
+
+bool PostProcessContextData::HasAnyShadersReloadRequests(PostPersistentData* data) const
+{
+    return (data->IsNeedToReloadShaders(false) || data->IsExternalReloadRequested());
+}
+void PostProcessContextData::ClearShadersReloadRequests(PostPersistentData* data)
+{
+    data->SetReloadShadersState(false);
+}
+
+void PostProcessContextData::ReloadShaders(PostPersistentData* data, PostEffectContextMoBu* fxContext, 
+    FBEvaluateInfo* pEvaluateInfoIn, FBCamera* pCamera, const PostEffectContextProxy::Parameters& contextParameters)
+{
+    if (!fxContext->ReloadShaders())
+    {
+        LOGE("[PostProcessContextData::ReloadShaders] failed to reload shaders!\n");
+        data->Active = false;
+        return;
+    }
+
+    fxContext->Evaluate(pEvaluateInfoIn, pCamera, contextParameters);
+    fxContext->Synchronize();
+
+    
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -329,18 +386,14 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
                 contextParameters.w = localViewport[2];
                 contextParameters.h = localViewport[3];
 
-                if (!isReadyToEvaluate && pane.data->IsNeedToReloadShaders())
+                if (!IsReadyToEvaluate() && HasAnyShadersReloadRequests(pane.data))
                 {
-                    standardEffectsCollection.ChangeContext();
-                    fxContext->ChangeContext();
-					fxContext->Evaluate(pEvaluateInfoIn, pCamera, contextParameters);
-					fxContext->Synchronize();
-
-                    pane.data->SetReloadShadersState(false);
+					ReloadShaders(pane.data, fxContext, pEvaluateInfoIn, pCamera, contextParameters);
+                    ClearShadersReloadRequests(pane.data);
                 }
 
                 bool isReadyToRender = true;
-                isReadyToRender &= standardEffectsCollection.PreparationToRender();
+                isReadyToRender &= standardEffectsCollection.IsOk();
                 isReadyToRender &= fxContext->IsReadyToRender();
 
                 if (isReadyToRender && fxContext->Render(pEvaluateInfoIn, currBuffers))
@@ -462,7 +515,7 @@ bool PostProcessContextData::EmptyGLErrorStack()
 
 void PostProcessContextData::PreRenderFirstEntry()
 {
-    FBSystem& mSystem = FBSystem::TheOne();
+    FBSystem& system = FBSystem::TheOne();
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mAttachedFBO[mEnterId]);
 
     //mPaneId = 0;
@@ -475,7 +528,7 @@ void PostProcessContextData::PreRenderFirstEntry()
 
     mSchematicView[0] = mSchematicView[1] = mSchematicView[2] = mSchematicView[3] = false;
 
-    FBRenderer *pRenderer = mSystem.Renderer;
+    FBRenderer *pRenderer = system.Renderer;
     const int schematic = pRenderer->GetSchematicViewPaneIndex();
 
     if (schematic >= 0)
@@ -715,7 +768,7 @@ void PostProcessContextData::ResetPaneSettings()
 {
     mEvaluatePaneCount = 0;
     mRenderPaneCount = 0;
-    isReadyToEvaluate = false;
+	SetReadyToEvaluate(false);
     for (int i = 0; i < MAX_PANE_COUNT; ++i)
     {
         mEvaluatePanes[i].data = nullptr;
@@ -770,7 +823,7 @@ bool PostProcessContextData::PrepPaneSettings()
 
                 if (FBIS(pdst, PostPersistentData))
                 {
-                    PostPersistentData *pData = (PostPersistentData*)pdst;
+                    PostPersistentData *pData = static_cast<PostPersistentData*>(pdst);
 
                     if (pData->Active && pData->UseCameraObject)
                     {

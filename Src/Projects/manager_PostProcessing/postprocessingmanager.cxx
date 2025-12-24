@@ -366,7 +366,7 @@ void PostProcessingManager::EventFileNew(HISender pSender, HKEvent pEvent)
 	for (auto& contextPair : gContextMap)
 	{
 		PostProcessContextData* pContextData = contextPair.second;
-		pContextData->ResetPaneSettings();
+		pContextData->SetNeedToResetPaneSettings(true);
 	}
 }
 
@@ -376,7 +376,7 @@ void PostProcessingManager::EventFileOpen(HISender pSender, HKEvent pEvent)
 	for (auto& contextPair : gContextMap)
 	{
 		PostProcessContextData* pContextData = contextPair.second;
-		pContextData->ResetPaneSettings();
+		pContextData->SetNeedToResetPaneSettings(true);
 	}
 }
 
@@ -396,7 +396,7 @@ void PostProcessingManager::EventFileOpenComplete(HISender pSender, HKEvent pEve
 	for (auto& contextPair : gContextMap)
 	{
 		PostProcessContextData* pContextData = contextPair.second;
-		pContextData->ResetPaneSettings();
+		pContextData->SetNeedToResetPaneSettings(true);
 	}
 }
 

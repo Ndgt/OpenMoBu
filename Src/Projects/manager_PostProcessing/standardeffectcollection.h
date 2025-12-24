@@ -62,7 +62,10 @@ public:
 
 	void ChangeContext();
 	// check reload of shaders was requested, then reload them
-	bool PreparationToRender();
+	bool ReloadShaders();
+
+	// returns true if all shaders are loaded and compiled, ready to use
+	bool IsOk() const;
 
 	bool LoadShaders();
 	void FreeShaders();

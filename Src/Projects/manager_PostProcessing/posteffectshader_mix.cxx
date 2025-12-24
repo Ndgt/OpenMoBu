@@ -100,7 +100,7 @@ bool EffectShaderMix::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 		}
 		else
 		{
-			writer(mBloom, 0.0f, 0.0f, 0.0f, 0.0f);
+			writer(mBloom, 0.0f, 0.0f, static_cast<float>(0.01 * userObject->Inverse), 0.0f);
 		}
 	}
 
@@ -133,15 +133,18 @@ bool EffectShaderMixUserObject::FBCreate()
 	FBPropertyPublish(this, BloomMinBright, PostPersistentData::BLOOM_MIN_BRIGHT, nullptr, nullptr);
 	FBPropertyPublish(this, BloomTone, PostPersistentData::BLOOM_TONE, nullptr, nullptr);
 	FBPropertyPublish(this, BloomStretch, PostPersistentData::BLOOM_STRETCH, nullptr, nullptr);
+	FBPropertyPublish(this, Inverse, "Inverse", nullptr, nullptr);
 
 	BloomMinBright.SetMinMax(0.0, 100.0);
 	BloomTone.SetMinMax(0.0, 100.0);
 	BloomStretch.SetMinMax(0.0, 100.0);
+	Inverse.SetMinMax(0.0, 100.0);
 
 	Bloom = false;
 	BloomMinBright = 50.0;
 	BloomTone = 100.0;
 	BloomStretch = 100.0;
+	Inverse = 0.0;
 
 	VertexFile = EffectShaderMix::SHADER_VERTEX;
 	VertexFile.ModifyPropertyFlag(FBPropertyFlag::kFBPropertyFlagReadOnly, true);
