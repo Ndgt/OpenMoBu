@@ -40,6 +40,8 @@ public:
 	double				mLastSystemTime{ std::numeric_limits<double>::max() };
 	double				mLastLocalTime{ std::numeric_limits<double>::max() };
 
+	bool			mIsTimeInitialized{ false };
+
 	//
 	int				mEvaluatePaneCount{ 0 }; // @see mEvaluatePanes
 	int				mRenderPaneCount{ 0 }; // @see mRenderPanes
@@ -67,8 +69,16 @@ public:
 
 	struct SPaneData
 	{
+		PostEffectContextMoBu* fxContext{ nullptr };
 		PostPersistentData* data{ nullptr };
 		FBCamera* camera{ nullptr };
+
+		void Clear()
+		{
+			fxContext = nullptr;
+			data = nullptr;
+			camera = nullptr;
+		}
 	};
 	/*
 	struct SPostFXContext
@@ -89,23 +99,19 @@ public:
 	StandardEffectCollection standardEffectsCollection;
 
 	// if each pane has different size (in practice should be not more then 2
-	std::unique_ptr<PostEffectBuffers> mEffectBuffers0;
-	std::unique_ptr<PostEffectBuffers> mEffectBuffers1;
-	std::unique_ptr<PostEffectBuffers> mEffectBuffers2;
-	std::unique_ptr<PostEffectBuffers> mEffectBuffers3;
-
+	std::array< std::unique_ptr<PostEffectBuffers>, MAX_PANE_COUNT> mPaneEffectBuffers;
+	
 	void    Init();
 	
 
 	void	PreRenderFirstEntry();
 
 	// run in custom thread to evaluate the processing data
-	void	Evaluate(FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluteInfoIn);
+	void	Evaluate(FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn);
 	void	Synchronize();
 
-	void	RenderBeforeRender(bool processCompositions, bool renderToBuffer);
-	bool	RenderAfterRender(bool processCompositions, bool renderToBuffer, 
-		FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn);
+	void	RenderBeforeRender(bool processCompositions);
+	bool	RenderAfterRender(bool processCompositions, FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn);
 
 	// thread-safe, atomic read the ready to evaluate flag
 	bool IsReadyToEvaluate() const;
@@ -131,6 +137,9 @@ private:
 	void	FreeShaders();
 
 	void	FreeBuffers();
+
+	void PrepareContextParameters(PostEffectContextProxy::Parameters& contextParametersOut, FBTime systemTime, FBTime localTime) const;
+	void PrepareContextParametersForCamera(PostEffectContextProxy::Parameters& contextParametersOut, FBCamera* pCamera, int nPane) const;
 
 	// once we load file, we should reset pane user object pointers 
 	// and wait for next PrepPaneSettings call

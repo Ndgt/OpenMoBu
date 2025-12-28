@@ -549,7 +549,7 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 		}
 
 			mLastProcessCompositions = usePostProcessing;
-			pContextData->RenderBeforeRender(usePostProcessing, false);
+			pContextData->RenderBeforeRender(usePostProcessing);
 			
 			if (true == mDoVideoClipTimewrap)
 			{
@@ -574,7 +574,7 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 			FBTime systemTime = evalInfo->GetSystemTime();
 			FBTime localTime = evalInfo->GetLocalTime();
 
-			pContextData->RenderAfterRender(usePostProcessing, false, systemTime, localTime, evalInfo);
+			pContextData->RenderAfterRender(usePostProcessing, systemTime, localTime, evalInfo);
 
 		} break;
 
@@ -588,13 +588,17 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 
 bool PostProcessingManager::ExternalRenderAfterRender()
 {
+	FBProfilerHelper lProfiling(FBProfiling_TaskCycleIndex(PostProcessRenderer), FBGetDisplayInfo(), FBGetRenderingTaskCycle());
+
 	auto iter = gContextMap.find(gCurrentContext);
 
 	if (iter != end(gContextMap))
 	{
 		FBSystem& system = FBSystem::TheOne();
+		FBTime systemTime = system.SystemTime;
+		FBTime localTime = system.LocalTime;
 
-		return iter->second->RenderAfterRender(mLastProcessCompositions, false, system.SystemTime, system.LocalTime, FBGetDisplayInfo());
+		return iter->second->RenderAfterRender(mLastProcessCompositions, systemTime, localTime, FBGetDisplayInfo());
 	}
 	return false;
 }

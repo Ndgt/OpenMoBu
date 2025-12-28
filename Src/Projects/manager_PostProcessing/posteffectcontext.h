@@ -83,10 +83,12 @@ public:
 		double localTime{ 0.0 }; //!< playback time (in seconds)
 		double localTimeDT{ 0.0 };
 
+		int x{ 0 }; //!< viewport x position
+		int y{ 0 }; //!< viewport y position
 		int w{ 1 }; //!< viewport width
 		int h{ 1 }; //!< viewport height
 		int localFrame{ 0 }; //!< playback frame number
-		int padding{ 0 }; //!< padding for alignment
+		bool isSkipFrame{ false }; //!< in case of system camera or schematic view for the given pane
 	};
 
 	struct alignas(16) Cache

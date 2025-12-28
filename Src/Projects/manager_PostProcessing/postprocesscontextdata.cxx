@@ -29,6 +29,7 @@ void PostProcessContextData::Init()
     mStartSystemTime = FBSystem::TheOne().SystemTime;
     mLastSystemTime = std::numeric_limits<double>::max();
     mLastLocalTime = std::numeric_limits<double>::max();
+	mIsTimeInitialized = false;
     mVideoRendering = false;
     mEvaluatePaneCount = 0;
     mRenderPaneCount = 0;
@@ -40,79 +41,41 @@ void PostProcessContextData::Init()
         mSchematicView[i] = false;
     }
 
-    mEffectBuffers0.reset(new PostEffectBuffers());
-    mEffectBuffers1.reset(new PostEffectBuffers());
-    mEffectBuffers2.reset(new PostEffectBuffers());
-    mEffectBuffers3.reset(new PostEffectBuffers());
+    for (int n = 0; n < MAX_PANE_COUNT; ++n)
+    {
+        mPaneEffectBuffers[n].reset(new PostEffectBuffers());
+	}
 
     //
     mMainFrameBuffer.InitTextureInternalFormat();
 }
 
-void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluteInfoIn)
+void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn)
 {
-    if (!IsReadyToEvaluate() || FBMergeTransactionIsOn())
+    const bool ready = IsReadyToEvaluate();
+    if (!ready || FBMergeTransactionIsOn())
     {
         // in a process of shaders reloading, skip evaluation for now
         return;
     }
     
-    systemTime = systemTime - mStartSystemTime;
-
-    const double sysTimeSecs = systemTime.GetSecondDouble();
-    const double localTimeSecs = localTime.GetSecondDouble();
-
-    if (mLastSystemTime == std::numeric_limits<double>::max())
-        mLastSystemTime = sysTimeSecs;
-    if (mLastLocalTime == std::numeric_limits<double>::max())
-        mLastLocalTime = localTimeSecs;
-
-    const double systemTimeDT = sysTimeSecs - mLastSystemTime;
-    const double localTimeDT = localTimeSecs - mLastLocalTime;
-
     PostEffectContextProxy::Parameters contextParameters;
-	contextParameters.localFrame = static_cast<int>(localTime.GetFrame());
-	contextParameters.sysTime = sysTimeSecs;
-	contextParameters.sysTimeDT = systemTimeDT;
-	contextParameters.localTime = localTimeSecs;
-	contextParameters.localTimeDT = localTimeDT;
+    PrepareContextParameters(contextParameters, systemTime, localTime);
 
     // for all post processing view panes, evaluate their effect chains
 
     for (int nPane = 0; nPane < mEvaluatePaneCount; ++nPane)
     {
         const SPaneData& pane = mEvaluatePanes[nPane];
-        FBCamera* pCamera = pane.camera;
 
-        if (!pane.data || HasAnyShadersReloadRequests(pane.data) || !pCamera)
-            continue;
-
-        auto iter = mPostFXContextsMap.find(pane.data);
-        if (iter == mPostFXContextsMap.end())
+        if (!pane.data || !pane.camera || !pane.fxContext)
         {
             continue;
-		}
-
-		int viewportWidth = pCamera->CameraViewportWidth;
-		int viewportHeight = pCamera->CameraViewportHeight;
-
-        if (pCamera->SystemCamera)
-        {
-            viewportWidth = 0;
         }
-        else if (!mVideoRendering || nPane > 0)
-        {
-            if (mSchematicView[nPane])
-                viewportWidth = 0;
-        }
+        
+		PrepareContextParametersForCamera(contextParameters, pane.camera, nPane);
 
-		contextParameters.w = viewportWidth;
-		contextParameters.h = viewportHeight;
-
-        if (PostEffectContextMoBu* fxContext = iter->second.get())
-        {
-            fxContext->Evaluate(pEvaluteInfoIn, pCamera, contextParameters);
-        }
+        pane.fxContext->Evaluate(pEvaluateInfoIn, pane.camera, contextParameters);
     }
 }
 
@@ -135,6 +98,8 @@ void PostProcessContextData::Synchronize()
         SPaneData& evalPane = mEvaluatePanes[nPane];
         evalPane = mRenderPanes[nPane];
 
+		evalPane.fxContext = nullptr;
+
         if (!evalPane.data || !evalPane.camera)
             continue;
 
@@ -155,6 +120,7 @@ void PostProcessContextData::Synchronize()
 		}
 
         it->second->Synchronize();
+		evalPane.fxContext = it->second.get();
 		isReady = true;
     }
 	SetReadyToEvaluate(isReady);
@@ -206,7 +172,7 @@ void PostProcessContextData::ReloadShaders(PostPersistentData* data, PostEffectC
 
 ////////////////////////////////////////////////////////////////////////////////////
 // RenderBeforeRender
-void PostProcessContextData::RenderBeforeRender(const bool processCompositions, const bool renderToBuffer)
+void PostProcessContextData::RenderBeforeRender(bool processCompositions)
 {
     mEnterId++;
     
@@ -219,30 +185,15 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
         for (int nPane = 0; nPane < mRenderPaneCount; ++nPane)
         {
             FBCamera *pCamera = renderer->GetCameraInPane(nPane);
-            if (nullptr == pCamera || true == pCamera->SystemCamera
-                || true == mVideoRendering || true == mSchematicView[nPane])
+            if (!pCamera 
+                || true == pCamera->SystemCamera
+                || mVideoRendering 
+                || mSchematicView[nPane])
             {
                 mRenderPanes[nPane].camera = nullptr;
                 continue;
             }
             mRenderPanes[nPane].camera = pCamera;
-
-            PostEffectBuffers *currBuffers = nullptr;
-            switch (nPane)
-            {
-            case 0:
-                currBuffers = mEffectBuffers0.get();
-                break;
-            case 1:
-                currBuffers = mEffectBuffers1.get();
-                break;
-            case 2:
-                currBuffers = mEffectBuffers2.get();
-                break;
-            case 3:
-                currBuffers = mEffectBuffers3.get();
-                break;
-            }
         }
 
         // it will use attached dimentions, if any external buffer is exist
@@ -261,9 +212,55 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
 /////////////////////////////////////////////////////////////////////////////////////
 // RenderAfterRender - post processing work after main scene rendering is finished
 
+void PostProcessContextData::PrepareContextParameters(PostEffectContextProxy::Parameters& contextParametersOut, FBTime systemTime, FBTime localTime) const
+{
+    systemTime = systemTime - mStartSystemTime;
+    const double sysTimeSecs = systemTime.GetSecondDouble();
+    const double localTimeSecs = localTime.GetSecondDouble();
 
-bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool renderToBuffer, 
-    FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn)
+    const double systemTimeDT = (mIsTimeInitialized) ? sysTimeSecs - mLastSystemTime : 0.0;
+    const double localTimeDT = (mIsTimeInitialized) ? localTimeSecs - mLastLocalTime : 0.0;
+
+    contextParametersOut.localFrame = static_cast<int>(localTime.GetFrame());
+    contextParametersOut.sysTime = sysTimeSecs;
+    contextParametersOut.sysTimeDT = systemTimeDT;
+    contextParametersOut.localTime = localTimeSecs;
+    contextParametersOut.localTimeDT = localTimeDT;
+}
+
+void PostProcessContextData::PrepareContextParametersForCamera(PostEffectContextProxy::Parameters& contextParametersOut, FBCamera* pCamera, int nPane) const
+{
+    if (!pCamera)
+		return;
+
+    int viewportX = pCamera->CameraViewportX;
+    int viewportY = pCamera->CameraViewportY;
+    int viewportWidth = pCamera->CameraViewportWidth;
+    int viewportHeight = pCamera->CameraViewportHeight;
+
+    bool isSkipFrame = false;
+    if (pCamera->SystemCamera)
+    {
+        viewportWidth = 0;
+        isSkipFrame = true;
+    }
+    else if (!mVideoRendering || nPane > 0)
+    {
+        if (mSchematicView[nPane])
+        {
+            viewportWidth = 0;
+			isSkipFrame = true;
+        }
+    }
+
+	contextParametersOut.x = viewportX;
+	contextParametersOut.y = viewportY;
+    contextParametersOut.w = viewportWidth;
+    contextParametersOut.h = viewportHeight;
+	contextParametersOut.isSkipFrame = isSkipFrame;
+}
+
+bool PostProcessContextData::RenderAfterRender(bool processCompositions, FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn)
 {
     bool lStatus = false;
 
@@ -274,12 +271,12 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
     // !!!
     if (processCompositions && 1 == mEnterId)
     {
-        
         glDisable(GL_MULTISAMPLE);
         glDisable(GL_DEPTH_TEST);
 
         mMainFrameBuffer.EndRender();
-        mMainFrameBuffer.PrepForPostProcessing(false);	// ?!
+        constexpr bool drawToBack{ false };
+        mMainFrameBuffer.PrepForPostProcessing(drawToBack);	// ?!
 
         CHECK_GL_ERROR();
 
@@ -287,29 +284,9 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
 #ifndef OGL_DEBUG
         EmptyGLErrorStack();
 #endif
+        PostEffectContextProxy::Parameters params;
+		PrepareContextParameters(params, systemTime, localTime);
         
-        systemTime = systemTime - mStartSystemTime;
-        const double sysTimeSecs = systemTime.GetSecondDouble();
-        const double localTimeSecs = localTime.GetSecondDouble();
-
-        if (mLastSystemTime == std::numeric_limits<double>::max())
-            mLastSystemTime = sysTimeSecs;
-        if (mLastLocalTime == std::numeric_limits<double>::max())
-            mLastLocalTime = localTimeSecs;
-
-        const double systemTimeDT = sysTimeSecs - mLastSystemTime;
-        const double localTimeDT = localTimeSecs - mLastLocalTime;
-
-        mLastSystemTime = sysTimeSecs;
-        mLastLocalTime = localTimeSecs;
-
-        PostEffectContextProxy::Parameters contextParameters;
-        contextParameters.localFrame = static_cast<int>(localTime.GetFrame());
-        contextParameters.sysTime = sysTimeSecs;
-        contextParameters.sysTimeDT = systemTimeDT;
-        contextParameters.localTime = localTimeSecs;
-        contextParameters.localTimeDT = localTimeDT;
-
         for (int nPane = 0; nPane < mRenderPaneCount; ++nPane)
         {
             SPaneData& pane = mRenderPanes[nPane];
@@ -317,43 +294,13 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
             if (!pCamera)
                 continue;
 
-            int localViewport[4] = {
-                pCamera->CameraViewportX,
-                pCamera->CameraViewportY,
-                pCamera->CameraViewportWidth,
-                pCamera->CameraViewportHeight
-            };
+			PrepareContextParametersForCamera(params, pCamera, nPane);
+            PostEffectBuffers *currBuffers = mPaneEffectBuffers[nPane].get();
             
-            if (true == pCamera->SystemCamera)
-            {
-                localViewport[2] = 0;
-            }
-            else if (false == mVideoRendering || nPane > 0)
-            {
-                if (true == mSchematicView[nPane])
-                    localViewport[2] = 0;
-            }
-            
-            PostEffectBuffers *currBuffers = nullptr;
-            switch (nPane)
-            {
-            case 0:
-                currBuffers = mEffectBuffers0.get();
-                break;
-            case 1:
-                currBuffers = mEffectBuffers1.get();
-                break;
-            case 2:
-                currBuffers = mEffectBuffers2.get();
-                break;
-            case 3:
-                currBuffers = mEffectBuffers3.get();
-                break;
-            }
-
             // not in schematic view
-            if (localViewport[2] > 0 && nullptr != currBuffers
-                && localViewport[2] == currBuffers->GetWidth()
+            if (params.w > 0
+                && currBuffers
+                && params.w == currBuffers->GetWidth()
                 && pane.data)
             {
                 auto iter = mPostFXContextsMap.find(pane.data);
@@ -369,26 +316,23 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
 
                 if (!mMainFrameBuffer.isFboAttached())
                 {
-                    BlitFBOToFBOOffset(mMainFrameBuffer.GetFinalFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3], 0,
-                        doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, localViewport[2], localViewport[3], doubleFramebufferRequest->GetWriteAttachment(),
+                    BlitFBOToFBOOffset(mMainFrameBuffer.GetFinalFBO(), params.x, params.y, params.w, params.h, 0,
+                        doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
                         true, false, false, false); // copy depth and no any other attachments
                 }
                 else
                 {
-                    BlitFBOToFBOOffset(mMainFrameBuffer.GetAttachedFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3], 0,
-                        doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, localViewport[2], localViewport[3], doubleFramebufferRequest->GetWriteAttachment(),
+                    BlitFBOToFBOOffset(mMainFrameBuffer.GetAttachedFBO(), params.x, params.y, params.w, params.h, 0,
+                        doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
                         true, false, false, false); // copy depth and no any other attachments
                 }
 
 
                 // 2. process it
 
-                contextParameters.w = localViewport[2];
-                contextParameters.h = localViewport[3];
-
                 if (!IsReadyToEvaluate() && HasAnyShadersReloadRequests(pane.data))
                 {
-					ReloadShaders(pane.data, fxContext, pEvaluateInfoIn, pCamera, contextParameters);
+					ReloadShaders(pane.data, fxContext, pEvaluateInfoIn, pCamera, params);
                     ClearShadersReloadRequests(pane.data);
                 }
 
@@ -422,7 +366,7 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
                         // effect should be ended up with writing into target
                         doubleFramebufferRequest->Bind();
                         
-                        DrawHUD(0, 0, localViewport[2], localViewport[3], mMainFrameBuffer.GetWidth(), mMainFrameBuffer.GetHeight());
+                        DrawHUD(0, 0, params.w, params.h, mMainFrameBuffer.GetWidth(), mMainFrameBuffer.GetHeight());
 
                         doubleFramebufferRequest->UnBind();
                     }
@@ -431,14 +375,14 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
 
                     if (!mMainFrameBuffer.isFboAttached())
                     {
-                        BlitFBOToFBOOffset(doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, localViewport[2], localViewport[3], doubleFramebufferRequest->GetWriteAttachment(),
-                            mMainFrameBuffer.GetFinalFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3], 0,
+                        BlitFBOToFBOOffset(doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
+                            mMainFrameBuffer.GetFinalFBO(), params.x, params.y, params.w, params.h, 0,
                             false, false, false, false); // don't copy depth or any other color attachment
                     }
                     else
                     {
-                        BlitFBOToFBOOffset(doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, localViewport[2], localViewport[3], doubleFramebufferRequest->GetWriteAttachment(),
-                            mMainFrameBuffer.GetAttachedFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3], 0,
+                        BlitFBOToFBOOffset(doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
+                            mMainFrameBuffer.GetAttachedFBO(), params.x, params.y, params.w, params.h, 0,
                             false, false, false, false); // don't copy depth or any other color attachment
                     }
                 }
@@ -449,8 +393,6 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
                 currBuffers->OnFrameRendered();
             }
         }
-
-
 
         if (mAttachedFBO[mEnterId - 1] > 0)
         {
@@ -478,6 +420,8 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
             lStatus = true;
         }
 
+        mLastSystemTime = systemTime.GetSecondDouble();
+        mLastLocalTime = localTime.GetSecondDouble();
 
         CHECK_GL_ERROR();
     }
@@ -634,21 +578,7 @@ void PostProcessContextData::PreRenderFirstEntry()
         bool usePreview = mRenderPanes[i].data->OutputPreview;
         double scaleF = mRenderPanes[i].data->OutputScaleFactor;
 
-        switch (i)
-        {
-        case 0:
-            mEffectBuffers0->ReSize(w, h, usePreview, scaleF);
-            break;
-        case 1:
-            mEffectBuffers1->ReSize(w, h, usePreview, scaleF);
-            break;
-        case 2:
-            mEffectBuffers2->ReSize(w, h, usePreview, scaleF);
-            break;
-        case 3:
-            mEffectBuffers3->ReSize(w, h, usePreview, scaleF);
-            break;
-        }    
+		mPaneEffectBuffers[i]->ReSize(w, h, usePreview, scaleF);    
     }
 
     //
@@ -758,10 +688,10 @@ void PostProcessContextData::FreeBuffers()
 {
     mMainFrameBuffer.ChangeContext();
 
-    mEffectBuffers0->ChangeContext();
-    mEffectBuffers1->ChangeContext();
-    mEffectBuffers2->ChangeContext();
-    mEffectBuffers3->ChangeContext();
+    for (int i = 0; i < MAX_PANE_COUNT; ++i)
+    {
+		mPaneEffectBuffers[i]->ChangeContext();
+    }
 }
 
 void PostProcessContextData::ResetPaneSettings()
@@ -771,10 +701,8 @@ void PostProcessContextData::ResetPaneSettings()
 	SetReadyToEvaluate(false);
     for (int i = 0; i < MAX_PANE_COUNT; ++i)
     {
-        mEvaluatePanes[i].data = nullptr;
-        mEvaluatePanes[i].camera = nullptr;
-        mRenderPanes[i].data = nullptr;
-        mRenderPanes[i].camera = nullptr;
+        mEvaluatePanes[i].Clear();
+        mRenderPanes[i].Clear();
     }
     mPostFXContextsMap.clear();
 }
@@ -787,8 +715,7 @@ bool PostProcessContextData::PrepPaneSettings()
 
     for (int i = 0; i < MAX_PANE_COUNT; ++i)
     {
-        mRenderPanes[i].data = nullptr;
-        mRenderPanes[i].camera = nullptr;
+        mRenderPanes[i].Clear();
     }
     
     // find a global settings (without camera attachments)
