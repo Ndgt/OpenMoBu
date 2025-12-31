@@ -66,8 +66,8 @@ void DebugOGL_Callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
 {
 	if (type == GL_DEBUG_TYPE_ERROR)
 	{
-		FBTrace(">> ERROR!\n");
-		FBTrace("debug message - %s\n", message);
+		LOGE(">> ERROR!\n");
+		LOGE("debug message - %s\n", message);
 	}
 }
 
@@ -488,7 +488,7 @@ void PostProcessingManager::CheckForAContextChange()
 	if (hContext != gCurrentContext)
 	{
 		gCurrentContext = hContext;
-		FBTrace("> !! CHANGE CONTEXT !!\n");
+		LOGI("> !! CHANGE CONTEXT !!\n");
 	}
 }
 
@@ -616,8 +616,7 @@ void PostProcessingManager::OnVideoFrameRendering(HISender pSender, HKEvent pEve
 			return;
 
 		// turn off preview mode and switch quality settings if needed
-		iter->second->mVideoRendering = true;
-		
+		iter->second->VideoRenderingBegin();
 		PushUpperLowerClipForEffects();
 	}
 	else if (levent.GetState() == FBEventVideoFrameRendering::eEndRendering)
@@ -627,7 +626,7 @@ void PostProcessingManager::OnVideoFrameRendering(HISender pSender, HKEvent pEve
 			return;
 
 		// turn on back preview mode and display quality settings
-		iter->second->mVideoRendering = false;
+		iter->second->VideoRenderingEnd();
 		PopUpperLowerClipForEffects();
 	}
 }

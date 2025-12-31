@@ -534,7 +534,7 @@ public:
 
 	void RequestShadersReload(bool isExternal = true, bool doPropagateToUserEffects = false);
 	bool IsNeedToReloadShaders(bool doPropagateToUserEffects=true);
-	bool IsExternalReloadRequested();
+	bool IsExternalReloadRequested() const;
 	void SetReloadShadersState(bool state, bool doPropagateToUserEffects=true);
 	void ClearReloadFlags();
 

@@ -51,7 +51,15 @@ extern void LOGE(const char* pFormatString, ...);
 #define VERIFY(expr) \
     do { \
         if (!(expr)) { \
-        LOGE("Check failed: %s at %s:%d", #expr, __FILE__, __LINE__); \
+        LOGE("Check failed: %s at %s:%d\n", #expr, __FILE__, __LINE__); \
         std::abort(); \
 		} \
+    } while(0)
+
+#define VERIFY_MSG(expr, fmt, ...) \
+    do { \
+        if (!(expr)) { \
+            LOGE("Check failed: %s at %s:%d | " fmt, #expr, __FILE__, __LINE__, ##__VA_ARGS__); \
+            std::abort(); \
+        } \
     } while(0)

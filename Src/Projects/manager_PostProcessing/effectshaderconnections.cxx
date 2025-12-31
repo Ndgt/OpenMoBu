@@ -96,57 +96,85 @@ EPropertyType IEffectShaderConnections::UniformTypeToShaderPropertyType(GLenum t
 
 IEffectShaderConnections::ShaderProperty::ShaderProperty(const IEffectShaderConnections::ShaderProperty& other)
 {
-	strcpy_s(name, sizeof(char) * MAX_NAME_LENGTH, other.name);
-	strcpy_s(uniformName, sizeof(char) * MAX_NAME_LENGTH, other.uniformName);
+	//strcpy_s(name, sizeof(char) * MAX_NAME_LENGTH, other.name);
+	//strcpy_s(uniformName, sizeof(char) * MAX_NAME_LENGTH, other.uniformName);
 	
+	SetNameHash(other.GetNameHash());
+	SetUniformNameHash(other.GetUniformNameHash());
+
 	flags = other.flags;
-	fbProperty = other.fbProperty;
+	//fbProperty = other.fbProperty;
 	mDefaultValue = other.mDefaultValue;
+	indexInArray = other.indexInArray;
+	isGeneratedByUniform = other.isGeneratedByUniform;
 }
 
-IEffectShaderConnections::ShaderProperty::ShaderProperty(const char* nameIn, const char* uniformNameIn, FBProperty* fbPropertyIn)
+IEffectShaderConnections::ShaderProperty::ShaderProperty(std::string_view nameIn, std::string_view uniformNameIn, FBProperty* fbPropertyIn)
 {
-	if (nameIn)
-		strcpy_s(name, sizeof(char) * MAX_NAME_LENGTH, nameIn);
-	if (uniformNameIn)
-		strcpy_s(uniformName, sizeof(char) * MAX_NAME_LENGTH, uniformNameIn);
+	SetName(nameIn);
+	SetUniformName(uniformNameIn);
+
 	if (fbPropertyIn)
 	{
 		const auto propertyType = FBPropertyToShaderPropertyType(fbPropertyIn->GetPropertyType());
 		SetType(propertyType);
-		fbProperty = fbPropertyIn;
+		//fbProperty = fbPropertyIn;
 	}
-
-	const uint32_t nameHash = ComputeNameHash();
-	mDefaultValue.SetNameHash(nameHash);
 }
 
-IEffectShaderConnections::ShaderProperty::ShaderProperty(const char* nameIn, const char* uniformNameIn, EPropertyType typeIn, FBProperty* fbPropertyIn)
+IEffectShaderConnections::ShaderProperty::ShaderProperty(std::string_view nameIn, std::string_view uniformNameIn, EPropertyType typeIn, FBProperty* fbPropertyIn)
 {
-	if (nameIn)
-		strcpy_s(name, sizeof(char) * 64, nameIn);
-	if (uniformNameIn)
-		strcpy_s(uniformName, sizeof(char) * 64, uniformNameIn);
-
 	SetType(typeIn);
 
-	if (fbPropertyIn)
-		fbProperty = fbPropertyIn;
-
-	const uint32_t nameHash = ComputeNameHash();
-	mDefaultValue.SetNameHash(nameHash);
+	SetName(nameIn);
+	SetUniformName(uniformNameIn);
 }
 
-uint32_t IEffectShaderConnections::ShaderProperty::ComputeNameHash() const
+uint32_t IEffectShaderConnections::ShaderProperty::ComputeNameHash(std::string_view s) const
 {
-	return xxhash32(name, HASH_SEED);
+	return xxhash32(s.data(), s.size(), HASH_SEED);
 }
 
 void IEffectShaderConnections::ShaderProperty::SetName(std::string_view nameIN) 
 { 
-	strncpy_s(name, nameIN.data(), nameIN.size()); 
-	const uint32_t nameHash = ComputeNameHash();
+	nameHash = ComputeNameHash(nameIN.data());
 	mDefaultValue.SetNameHash(nameHash);
+}
+
+void IEffectShaderConnections::ShaderProperty::SetNameHash(uint32_t hashIn)
+{
+	nameHash = hashIn;
+	mDefaultValue.SetNameHash(nameHash);
+}
+
+const char* IEffectShaderConnections::ShaderProperty::GetName() const noexcept
+{ 
+	return ResolveHash32(nameHash); 
+}
+
+uint32_t IEffectShaderConnections::ShaderProperty::GetNameHash() const
+{
+	return nameHash;
+}
+
+void IEffectShaderConnections::ShaderProperty::SetUniformName(std::string_view uniformNameIN)
+{
+	uniformNameHash = ComputeNameHash(uniformNameIN.data());
+}
+
+void IEffectShaderConnections::ShaderProperty::SetUniformNameHash(uint32_t hashIn)
+{
+	uniformNameHash = hashIn;
+}
+
+const char* IEffectShaderConnections::ShaderProperty::GetUniformName() const noexcept
+{ 
+	return ResolveHash32(uniformNameHash);
+}
+
+uint32_t IEffectShaderConnections::ShaderProperty::GetUniformNameHash() const
+{
+	return uniformNameHash;
 }
 
 IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetType(EPropertyType newType) 
@@ -238,21 +266,13 @@ bool IEffectShaderConnections::ShaderProperty::HasFlag(PropertyFlag testFlag) co
 	return flags.test(static_cast<size_t>(testFlag));
 }
 
-void IEffectShaderConnections::ShaderProperty::SwapValueBuffers()
-{
-	//const int writeIndex = 1 - mReadIndex.load(std::memory_order_relaxed);
-	
-	// Atomic swap
-	//mReadIndex.store(writeIndex, std::memory_order_release);
-}
-
 void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(
+	FBProperty* fbProperty,
 	ShaderPropertyValue& value, 
 	const ShaderProperty& shaderProperty, 
 	const PostEffectContextProxy* effectContext,
 	int maskIndex)
 {
-	FBProperty* fbProperty = shaderProperty.fbProperty;
 	if (fbProperty == nullptr)
 		return;
 
@@ -281,7 +301,7 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(
 
 	case FBPropertyType::kFBPT_double:
 	{
-		VERIFY(value.GetType() == EPropertyType::FLOAT);
+		VERIFY(value.GetType() == EPropertyType::FLOAT); // , "%s | %s\n", fbProperty->GetName(), ResolveHash32(value.GetNameHash()));
 		fbProperty->GetData(v, sizeof(double), effectContext->GetEvaluateInfo());
 		value.SetValue(v[0]);
 	} break;
@@ -388,5 +408,116 @@ void IEffectShaderConnections::ShaderProperty::ReadTextureConnections(ShaderProp
 		value.texture = nullptr;
 		value.shaderUserObject = nullptr;
 		value.SetType(EPropertyType::TEXTURE);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////
+// PropertyScheme
+
+IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::PropertyScheme::AddProperty(const ShaderProperty& property)
+{
+	const uint32_t nameHash = property.GetNameHash();
+	VERIFY(nameHash != 0);
+
+	auto& newProp = properties.emplace_back(property);
+	newProp.SetIndexInArray(static_cast<int>(properties.size()) - 1);
+	return newProp;
+}
+
+IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::PropertyScheme::AddProperty(ShaderProperty&& property)
+{
+	const uint32_t nameHash = property.GetNameHash();
+	VERIFY(nameHash != 0);
+
+	auto& newProp = properties.emplace_back(std::move(property));
+	newProp.SetIndexInArray(static_cast<int>(properties.size()) - 1);
+	return newProp;
+}
+
+IEffectShaderConnections::ShaderProperty* IEffectShaderConnections::PropertyScheme::FindPropertyByHash(uint32_t nameHash)
+{
+	auto iter = std::find_if(begin(properties), end(properties), [nameHash](ShaderProperty& prop) {
+		return prop.GetNameHash() == nameHash;
+		});
+
+	return (iter != end(properties)) ? std::addressof(*iter) : nullptr;
+}
+
+const IEffectShaderConnections::ShaderProperty* IEffectShaderConnections::PropertyScheme::FindPropertyByHash(uint32_t nameHash) const
+{
+	auto iter = std::find_if(begin(properties), end(properties), [nameHash](const ShaderProperty& prop) {
+		return prop.GetNameHash() == nameHash;
+		});
+
+	return (iter != end(properties)) ? std::addressof(*iter) : nullptr;
+}
+
+IEffectShaderConnections::ShaderProperty* IEffectShaderConnections::PropertyScheme::FindProperty(const std::string_view name)
+{
+	const uint32_t nameHash = xxhash32(name.data(), name.size(), ShaderProperty::HASH_SEED);
+	return FindPropertyByHash(nameHash);
+}
+
+const IEffectShaderConnections::ShaderProperty* IEffectShaderConnections::PropertyScheme::FindProperty(const std::string_view name) const
+{
+	const uint32_t nameHash = xxhash32(name.data(), name.size(), ShaderProperty::HASH_SEED);
+	return FindPropertyByHash(nameHash);
+}
+
+IEffectShaderConnections::ShaderProperty* IEffectShaderConnections::PropertyScheme::FindPropertyByUniform(const std::string_view name)
+{
+	const uint32_t nameHash = xxhash32(name.data(), name.size(), ShaderProperty::HASH_SEED);
+
+	auto iter = std::find_if(begin(properties), end(properties), [nameHash](ShaderProperty& prop) {
+		return prop.GetUniformNameHash() == nameHash;
+		});
+
+	return (iter != end(properties)) ? std::addressof(*iter) : nullptr;
+}
+
+const IEffectShaderConnections::ShaderProperty* IEffectShaderConnections::PropertyScheme::FindPropertyByUniform(const std::string_view name) const
+{
+	const uint32_t nameHash = xxhash32(name.data(), name.size(), ShaderProperty::HASH_SEED);
+
+	auto iter = std::find_if(begin(properties), end(properties), [nameHash](const ShaderProperty& prop) {
+		return prop.GetUniformNameHash() == nameHash;
+		});
+
+	return (iter != end(properties)) ? std::addressof(*iter) : nullptr;
+}
+
+IEffectShaderConnections::ShaderProperty* IEffectShaderConnections::PropertyScheme::GetProperty(const IEffectShaderConnections::ShaderPropertyProxy proxy)
+{
+	if (proxy.index >= 0
+		&& proxy.index < static_cast<int>(properties.size())
+		&& properties[proxy.index].GetNameHash() == proxy.nameHash)
+	{
+		return &properties[proxy.index];
+	}
+
+	return FindPropertyByHash(proxy.nameHash);
+}
+
+const IEffectShaderConnections::ShaderProperty* IEffectShaderConnections::PropertyScheme::GetProperty(const IEffectShaderConnections::ShaderPropertyProxy proxy) const
+{
+	if (proxy.index >= 0
+		&& proxy.index < static_cast<int>(properties.size())
+		&& properties[proxy.index].GetNameHash() == proxy.nameHash)
+	{
+		return &properties[proxy.index];
+	}
+
+	return FindPropertyByHash(proxy.nameHash);
+}
+
+void IEffectShaderConnections::PropertyScheme::AssociateFBProperties(FBComponent* component)
+{
+	for (auto& prop : properties)
+	{
+		if (FBProperty* fbProp = component->PropertyList.Find(prop.GetName()))
+		{
+			prop.SetFBProperty(fbProp);
+			prop.SetFBComponent(component);
+		}
 	}
 }

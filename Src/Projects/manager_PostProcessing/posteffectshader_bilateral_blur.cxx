@@ -30,27 +30,72 @@ uint32_t PostEffectShaderBilateralBlur::SHADER_NAME_HASH = xxhash32(PostEffectSh
 PostEffectShaderBilateralBlur::PostEffectShaderBilateralBlur(FBComponent* uiComponent)
 	: PostEffectBufferShader(uiComponent)
 	, mUIComponent(uiComponent)
+{}
+
+const char* PostEffectShaderBilateralBlur::GetName() const 
 {
-	if (FBIS(uiComponent, EffectShaderBilateralBlurUserObject))
+	if (FBIS(mUIComponent, EffectShaderBilateralBlurUserObject))
 	{
-		EffectShaderBilateralBlurUserObject* userObject = FBCast<EffectShaderBilateralBlurUserObject>(uiComponent);
+		EffectShaderBilateralBlurUserObject* userObject = FBCast<EffectShaderBilateralBlurUserObject>(mUIComponent);
+		return userObject->LongName;
+	}
+	return SHADER_NAME; 
+}
+uint32_t PostEffectShaderBilateralBlur::GetNameHash() const 
+{
+	if (FBIS(mUIComponent, EffectShaderBilateralBlurUserObject))
+	{
+		EffectShaderBilateralBlurUserObject* userObject = FBCast<EffectShaderBilateralBlurUserObject>(mUIComponent);
+		const char* longName = userObject->LongName;
+		return xxhash32(longName);
+	}
+	return SHADER_NAME_HASH; 
+}
+
+const char* PostEffectShaderBilateralBlur::GetUseMaskingPropertyName() const
+{
+	if (FBIS(mUIComponent, EffectShaderBilateralBlurUserObject))
+	{
+		EffectShaderBilateralBlurUserObject* userObject = FBCast<EffectShaderBilateralBlurUserObject>(mUIComponent);
+		return userObject->UseMasking.GetName();
+	}
+	return nullptr;
+}
+const char* PostEffectShaderBilateralBlur::GetMaskingChannelPropertyName() const
+{
+	if (FBIS(mUIComponent, EffectShaderBilateralBlurUserObject))
+	{
+		EffectShaderBilateralBlurUserObject* userObject = FBCast<EffectShaderBilateralBlurUserObject>(mUIComponent);
+		return userObject->MaskingChannel.GetName();
+	}
+	return nullptr;
+}
+
+void PostEffectShaderBilateralBlur::OnPopulateProperties(PropertyScheme* scheme)
+{
+	if (FBIS(mUIComponent, EffectShaderBilateralBlurUserObject))
+	{
+		EffectShaderBilateralBlurUserObject* userObject = FBCast<EffectShaderBilateralBlurUserObject>(mUIComponent);
 
 		ShaderProperty textureProperty(EffectShaderBilateralBlurUserObject::INPUT_TEXTURE_LABEL, "colorSampler", EPropertyType::TEXTURE, &userObject->InputTexture);
-		ColorTexture = &AddProperty(std::move(textureProperty))
-			.SetDefaultValue(CommonEffect::ColorSamplerSlot);
+		ColorTexture = scheme->AddProperty(std::move(textureProperty))
+			.SetDefaultValue(CommonEffect::ColorSamplerSlot)
+			.GetProxy();
 
 		ShaderProperty blurScaleProperty(EffectShaderBilateralBlurUserObject::BLUR_SCALE_LABEL, "scale", EPropertyType::VEC2, &userObject->BlurScale);
-		BlurScale = &AddProperty(std::move(blurScaleProperty));
+		BlurScale = scheme->AddProperty(std::move(blurScaleProperty)).GetProxy();
 	}
 	else
 	{
-		ColorTexture = &AddProperty(ShaderProperty("color", "colorSampler"))
+		ColorTexture = scheme->AddProperty(ShaderProperty("color", "colorSampler"))
 			.SetType(EPropertyType::TEXTURE)
-			.SetDefaultValue(CommonEffect::ColorSamplerSlot);
+			.SetDefaultValue(CommonEffect::ColorSamplerSlot)
+			.GetProxy();
 
-		BlurScale = &AddProperty(ShaderProperty("scale", "scale"))
+		BlurScale = scheme->AddProperty(ShaderProperty("scale", "scale"))
 			.SetType(EPropertyType::VEC2)
-			.SetFlag(PropertyFlag::ShouldSkip, true);
+			.SetFlag(PropertyFlag::ShouldSkip, true)
+			.GetProxy();
 	}
 }
 

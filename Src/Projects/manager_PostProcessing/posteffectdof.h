@@ -43,10 +43,11 @@ protected:
     [[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
     [[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
     // This is a predefined effect shader, properties are defined manually
-    virtual bool DoPopulatePropertiesFromUniforms() const override {
-        return false;
-    }
-	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
+    virtual bool DoPopulatePropertiesFromUniforms() const override { return false; }
+
+    virtual void OnPopulateProperties(PropertyScheme* scheme) override;
+
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 
 private:
 	static constexpr const char* SHADER_NAME = "Depth Of Field";
@@ -55,40 +56,40 @@ private:
 	static constexpr const char* SHADER_FRAGMENT = "/GLSL/dof.fsh";
 
     // Core depth of field parameters
-    ShaderProperty* mFocalDistance;
-    ShaderProperty* mFocalRange;
-    ShaderProperty* mFStop;
-    ShaderProperty* mCoC;  // Circle of confusion size in mm (35mm film = 0.03mm)
+    ShaderPropertyProxy mFocalDistance;
+    ShaderPropertyProxy mFocalRange;
+    ShaderPropertyProxy mFStop;
+    ShaderPropertyProxy mCoC;  // Circle of confusion size in mm (35mm film = 0.03mm)
 
     // Rendering parameters
-    ShaderProperty* mSamples;
-    ShaderProperty* mRings;
+    ShaderPropertyProxy mSamples;
+    ShaderPropertyProxy mRings;
 
     // Focus control
-    ShaderProperty* mAutoFocus;    // Use autofocus in shader
-    ShaderProperty* mFocus;        // Autofocus point on screen (0.0,0.0 - bottom-left, 1.0,1.0 - top-right)
-    ShaderProperty* mFocusPoint;
-    ShaderProperty* mManualDOF;    // Manual DOF calculation toggle
+    ShaderPropertyProxy mAutoFocus;    // Use autofocus in shader
+    ShaderPropertyProxy mFocus;        // Autofocus point on screen (0.0,0.0 - bottom-left, 1.0,1.0 - top-right)
+    ShaderPropertyProxy mFocusPoint;
+    ShaderPropertyProxy mManualDOF;    // Manual DOF calculation toggle
 
     // Near and far DOF blur parameters
-    ShaderProperty* mNDOFStart;    // Near DOF blur start distance
-    ShaderProperty* mNDOFDist;     // Near DOF blur falloff distance
-    ShaderProperty* mFDOFStart;    // Far DOF blur start distance  
-    ShaderProperty* mFDOFDist;     // Far DOF blur falloff distance
+    ShaderPropertyProxy mNDOFStart;    // Near DOF blur start distance
+    ShaderPropertyProxy mNDOFDist;     // Near DOF blur falloff distance
+    ShaderPropertyProxy mFDOFStart;    // Far DOF blur start distance  
+    ShaderPropertyProxy mFDOFDist;     // Far DOF blur falloff distance
 
     // Visual enhancement parameters
-    ShaderProperty* mBlurForeground;
-    ShaderProperty* mThreshold;    // Highlight threshold
-    ShaderProperty* mGain;         // Highlight gain
-    ShaderProperty* mBias;         // Bokeh edge bias
-    ShaderProperty* mFringe;       // Bokeh chromatic aberration/fringing
-    ShaderProperty* mNoise;        // Use noise instead of pattern for sample dithering
+    ShaderPropertyProxy mBlurForeground;
+    ShaderPropertyProxy mThreshold;    // Highlight threshold
+    ShaderPropertyProxy mGain;         // Highlight gain
+    ShaderPropertyProxy mBias;         // Bokeh edge bias
+    ShaderPropertyProxy mFringe;       // Bokeh chromatic aberration/fringing
+    ShaderPropertyProxy mNoise;        // Use noise instead of pattern for sample dithering
 
     // Experimental bokeh shape parameters
     // Note: Requires samples >= 4, rings >= 4 for good visual quality
-    ShaderProperty* mPentagon;     // Use pentagon as bokeh shape
-    ShaderProperty* mFeather;      // Pentagon shape feather amount
+    ShaderPropertyProxy mPentagon;     // Use pentagon as bokeh shape
+    ShaderPropertyProxy mFeather;      // Pentagon shape feather amount
 
     // Debug utilities
-    ShaderProperty* mDebugBlurValue;
+    ShaderPropertyProxy mDebugBlurValue;
 };

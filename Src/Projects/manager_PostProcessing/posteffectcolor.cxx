@@ -61,25 +61,7 @@ const EffectShaderColor* PostEffectColor::GetBufferShaderTypedPtr() const
 {
 	return mShaderColor.get();
 }
-/*
-bool PostEffectColor::Load(const char* shaderLocation)
-{
-	if (!mShaderMix->Load(shaderLocation))
-		return false;
-	if (!mShaderBlur->Load(shaderLocation))
-		return false;
 
-	return PostEffectBase::Load(shaderLocation);
-}
-
-bool PostEffectColor::CollectUIValues(IPostEffectContext* effectContext)
-{
-	mShaderMix->CollectUIValues(effectContext, 0);
-	mShaderBlur->CollectUIValues(effectContext, 0);
-
-	return PostEffectBase::CollectUIValues(effectContext);
-}
-*/
 void PostEffectColor::Render(PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext)
 {
 	// render SSAO into its own buffer
@@ -128,8 +110,8 @@ void PostEffectColor::Render(PostEffectRenderContext& renderContext, PostEffectC
 			renderContextBlur.generateMips = false;
 
 			const float color_shift = (postData->Bloom) ? static_cast<float>(0.01 * postData->BloomMinBright) : 0.0f;
-			renderContextBlur.OverrideUniform(*shaderBlur->mColorShift, color_shift);
-			renderContextBlur.OverrideUniform(*shaderBlur->mInvRes, 1.0f / static_cast<float>(outWidth), 1.0f / static_cast<float>(outHeight));
+			renderContextBlur.OverrideUniform(shaderBlur->GetPropertySchemePtr(), shaderBlur->mColorShift, color_shift);
+			renderContextBlur.OverrideUniform(shaderBlur->GetPropertySchemePtr(), shaderBlur->mInvRes, 1.0f / static_cast<float>(outWidth), 1.0f / static_cast<float>(outHeight));
 
 			shaderBlur->Render(renderContextBlur, effectContext);
 		}
@@ -163,24 +145,7 @@ uint32_t EffectShaderColor::SHADER_NAME_HASH = xxhash32(EffectShaderColor::SHADE
 
 EffectShaderColor::EffectShaderColor(FBComponent* ownerIn)
 	: PostEffectBufferShader(ownerIn)
-{
-	MakeCommonProperties();
-
-	AddProperty(ShaderProperty("color", "sampler0"))
-		.SetType(EPropertyType::TEXTURE)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
-		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
-
-	mChromaticAberration = &AddProperty(ShaderProperty("gCA", "gCA", EPropertyType::VEC4))
-		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
-
-	mCSB = &AddProperty(ShaderProperty("gCSB", "gCSB", EPropertyType::VEC4))
-		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
-
-	mHue = &AddProperty(ShaderProperty("gHue", "gHue", EPropertyType::VEC4))
-		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
-
-}
+{}
 
 const char* EffectShaderColor::GetUseMaskingPropertyName() const noexcept
 {
@@ -191,7 +156,25 @@ const char* EffectShaderColor::GetMaskingChannelPropertyName() const noexcept
 	return PostPersistentData::COLOR_MASKING_CHANNEL;
 }
 
-bool EffectShaderColor::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
+void EffectShaderColor::OnPopulateProperties(PropertyScheme* scheme)
+{
+	scheme->AddProperty(ShaderProperty("color", "sampler0"))
+		.SetType(EPropertyType::TEXTURE)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
+
+	mChromaticAberration = scheme->AddProperty(ShaderProperty("gCA", "gCA", EPropertyType::VEC4))
+		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+		.GetProxy();
+	mCSB = scheme->AddProperty(ShaderProperty("gCSB", "gCSB", EPropertyType::VEC4))
+		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+		.GetProxy();
+	mHue = scheme->AddProperty(ShaderProperty("gHue", "gHue", EPropertyType::VEC4))
+		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+		.GetProxy();
+}
+
+bool EffectShaderColor::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const
 {
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
 	if (!pData)
@@ -215,8 +198,5 @@ bool EffectShaderColor::OnCollectUI(PostEffectContextProxy* effectContext, int m
 		(mCSB, static_cast<float>(contrast), static_cast<float>(saturation), static_cast<float>(brightness), static_cast<float>(gamma))
 		(mHue, static_cast<float>(hue), static_cast<float>(hueSat), static_cast<float>(lightness), inverse);
 
-	//mChromaticAberration->SetValue(static_cast<float>(ca_dir[0]), static_cast<float>(ca_dir[1]), 0.0f, chromatic_aberration);
-	//mCSB->SetValue(static_cast<float>(contrast), static_cast<float>(saturation), static_cast<float>(brightness), static_cast<float>(gamma));
-	//mHue->SetValue(static_cast<float>(hue), static_cast<float>(hueSat), static_cast<float>(lightness), inverse);
 	return true;
 }

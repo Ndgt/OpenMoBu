@@ -44,19 +44,19 @@ private:
 
 protected:
 
-	ShaderProperty* mAmount;
-	ShaderProperty* VignOut;
-	ShaderProperty* VignIn;
-	ShaderProperty* VignFade;
+	ShaderPropertyProxy mAmount;
+	ShaderPropertyProxy VignOut;
+	ShaderPropertyProxy VignIn;
+	ShaderPropertyProxy VignFade;
 
 	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
 	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
 
 	// this is a predefined effect shader, properties are defined manually
-	virtual bool DoPopulatePropertiesFromUniforms() const override {
-		return false;
-	}
+	virtual bool DoPopulatePropertiesFromUniforms() const override { return false; }
 
-	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
+	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
+
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 };
 

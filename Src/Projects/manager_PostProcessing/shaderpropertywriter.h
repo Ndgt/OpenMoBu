@@ -20,17 +20,19 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 class ShaderPropertyWriter
 {
 public:
-    ShaderPropertyWriter(PostEffectBufferShader* shader, PostEffectContextProxy* context)
+    ShaderPropertyWriter(const PostEffectBufferShader* shader, PostEffectContextProxy* context)
         : mEffectHash(shader->GetNameHash())
         , mVariation(shader->GetCurrentShader())
     {
+        scheme = shader->GetPropertySchemePtr();
         mWriteMap = context->GetEffectPropertyValueMap(mEffectHash);
     }
 
     // Overload for different property types
     template<typename... Args>
-    ShaderPropertyWriter& operator()(IEffectShaderConnections::ShaderProperty* prop, Args&&... args)
+    ShaderPropertyWriter& operator()(IEffectShaderConnections::ShaderPropertyProxy propProxy, Args&&... args)
     {
+        const IEffectShaderConnections::ShaderProperty* prop = (scheme) ? scheme->GetProperty(propProxy) : nullptr;
         if (prop && mWriteMap)
         {
             ShaderPropertyValue newValue(prop->GetDefaultValue());
@@ -41,7 +43,8 @@ public:
     }
 
 private:
-    ShaderPropertyStorage::PropertyValueMap* mWriteMap;
+    const PostEffectBufferShader::PropertyScheme* scheme{ nullptr };
+    ShaderPropertyStorage::PropertyValueMap* mWriteMap{ nullptr };
     uint32_t mEffectHash;
     int32_t mVariation;
 };

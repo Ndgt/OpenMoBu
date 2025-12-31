@@ -20,48 +20,7 @@ uint32_t EffectShaderLensFlare::SHADER_NAME_HASH = xxhash32(EffectShaderLensFlar
 
 EffectShaderLensFlare::EffectShaderLensFlare(FBComponent* ownerIn)
 	: PostEffectBufferShader(ownerIn)
-{
-	MakeCommonProperties();
-
-	AddProperty(ShaderProperty("color", "sampler0"))
-		.SetType(EPropertyType::TEXTURE)
-		.SetDefaultValue(CommonEffect::ColorSamplerSlot)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
-
-	mFlareSeed = &AddProperty(ShaderProperty(PostPersistentData::FLARE_SEED, "flareSeed", nullptr))
-		.SetRequired(false);
-
-	mAmount = &AddProperty(ShaderProperty(PostPersistentData::FLARE_AMOUNT, "amount", nullptr))
-		.SetScale(0.01f);
-	
-	mTime = &AddProperty(ShaderProperty("timer", "iTime", nullptr))
-		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
-
-	mLightPos = &AddProperty(ShaderProperty("light_pos", "light_pos", nullptr))
-		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
-		.SetType(EPropertyType::VEC4);
-
-	mTint = &AddProperty(ShaderProperty(PostPersistentData::FLARE_TINT, "tint", nullptr))
-		.SetType(EPropertyType::VEC4)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
-
-	mInner = &AddProperty(ShaderProperty(PostPersistentData::FLARE_INNER, "inner", nullptr))
-		.SetScale(0.01f);
-	mOuter = &AddProperty(ShaderProperty(PostPersistentData::FLARE_OUTER, "outer", nullptr))
-		.SetScale(0.01f);
-
-	mFadeToBorders = &AddProperty(ShaderProperty(PostPersistentData::FLARE_FADE_TO_BORDERS, "fadeToBorders", nullptr))
-		.SetFlag(PropertyFlag::IsFlag, true)
-		.SetType(EPropertyType::FLOAT);
-	mBorderWidth = &AddProperty(ShaderProperty(PostPersistentData::FLARE_BORDER_WIDTH, "borderWidth", nullptr));
-	mFeather = &AddProperty(ShaderProperty(PostPersistentData::FLARE_BORDER_FEATHER, "feather", nullptr))
-		.SetScale(0.01f);
-
-	for (int nShader = 0; nShader < NUMBER_OF_SHADERS; ++nShader)
-	{
-		subShaders[nShader].Init();
-	}
-}
+{}
 
 const char* EffectShaderLensFlare::GetUseMaskingPropertyName() const noexcept
 {
@@ -72,30 +31,60 @@ const char* EffectShaderLensFlare::GetMaskingChannelPropertyName() const noexcep
 	return PostPersistentData::FLARE_MASKING_CHANNEL;
 }
 
-bool EffectShaderLensFlare::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
+void EffectShaderLensFlare::OnPopulateProperties(PropertyScheme* scheme)
+{
+	scheme->AddProperty(ShaderProperty("color", "sampler0"))
+		.SetType(EPropertyType::TEXTURE)
+		.SetDefaultValue(CommonEffect::ColorSamplerSlot)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+
+	mFlareSeed = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_SEED, "flareSeed", nullptr))
+		.SetRequired(false)
+		.GetProxy();
+
+	mAmount = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_AMOUNT, "amount", nullptr))
+		.SetScale(0.01f)
+		.GetProxy();
+
+	mTime = scheme->AddProperty(ShaderProperty("timer", "iTime", nullptr))
+		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+		.GetProxy();
+	mLightPos = scheme->AddProperty(ShaderProperty("light_pos", "light_pos", nullptr))
+		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+		.SetType(EPropertyType::VEC4)
+		.GetProxy();
+
+	mTint = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_TINT, "tint", nullptr))
+		.SetType(EPropertyType::VEC4)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
+
+	mInner = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_INNER, "inner", nullptr))
+		.SetScale(0.01f)
+		.GetProxy();
+	mOuter = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_OUTER, "outer", nullptr))
+		.SetScale(0.01f)
+		.GetProxy();
+
+	mFadeToBorders = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_FADE_TO_BORDERS, "fadeToBorders", nullptr))
+		.SetFlag(PropertyFlag::IsFlag, true)
+		.SetType(EPropertyType::FLOAT)
+		.GetProxy();
+	mBorderWidth = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_BORDER_WIDTH, "borderWidth", nullptr)).GetProxy();
+	mFeather = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_BORDER_FEATHER, "feather", nullptr))
+		.SetScale(0.01f)
+		.GetProxy();
+}
+
+bool EffectShaderLensFlare::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const
 {
 	PostPersistentData* data = effectContext->GetPostProcessData();
 	if (!data)
 		return false;
 
-	const int LastShaderIndex = GetCurrentShader();
-	SetCurrentShader(data->FlareType.AsInt());
+	const int numberOfPasses = data->FlareLight.GetCount();
+	mNumberOfPasses.store(numberOfPasses, std::memory_order_release);
 
-	if (GetCurrentShader() < 0 || GetCurrentShader() >= NUMBER_OF_SHADERS)
-	{
-		SetCurrentShader(0);
-		const EFlareType newFlareType{ EFlareType::flare1 };
-		data->FlareType.SetData((void*)&newFlareType);
-	}
-
-	if (LastShaderIndex != GetCurrentShader())
-	{
-		bHasShaderChanged = true;
-	}
-	
-	// flare seed property is used in bubble and anamorphic flare shaders
-	mFlareSeed->SetRequired(GetCurrentShader() != EFlareType::flare1);
-	
 	const double systemTime = (data->FlareUsePlayTime) ? effectContext->GetLocalTime() : effectContext->GetSystemTime();
 	double timerMult = data->FlareTimeSpeed;
 	double flareTimer = 0.01 * timerMult * systemTime;
@@ -103,12 +92,43 @@ bool EffectShaderLensFlare::OnCollectUI(PostEffectContextProxy* effectContext, i
 	ShaderPropertyWriter writer(this, effectContext);
 	writer(mTime, static_cast<float>(flareTimer));
 
-	return subShaders[mCurrentShader].CollectUIValues(mCurrentShader, effectContext, maskIndex);
+	return true;
 }
 
 int EffectShaderLensFlare::GetNumberOfPasses() const
 {
-	return subShaders[mCurrentShader].m_NumberOfPasses;
+	return mNumberOfPasses.load(std::memory_order_acquire);
+}
+
+void EffectShaderLensFlare::OnRenderBegin(PostEffectRenderContext& renderContextParent, PostEffectContextProxy* effectContext)
+{
+	PostPersistentData* data = effectContext->GetPostProcessData();
+	if (!data)
+		return;
+
+	const int lastShaderIndex = GetCurrentShader();
+	const int newShaderIndex = data->FlareType.AsInt();
+	SetCurrentShader(newShaderIndex);
+
+	if (newShaderIndex < 0 || newShaderIndex >= NUMBER_OF_SHADERS)
+	{
+		SetCurrentShader(0);
+		const EFlareType newFlareType{ EFlareType::flare1 };
+		data->FlareType.SetData((void*)&newFlareType);
+	}
+
+	if (lastShaderIndex != newShaderIndex)
+	{
+		//if (ShaderProperty* flareSeedProperty = GetPropertySchemePtr()->GetProperty(mFlareSeed))
+		{
+			// flare seed property is used in bubble and anamorphic flare shaders
+			//flareSeedProperty->SetRequired(newShaderIndex != EFlareType::flare1);
+		}
+		
+		bIsNeedToUpdatePropertyScheme = true;
+	}
+
+	subShaders[mCurrentShader].CollectUIValues(mCurrentShader, effectContext, GetNumberOfPasses(), 0);
 }
 
 bool EffectShaderLensFlare::OnRenderPassBegin(int passIndex, PostEffectRenderContext& renderContext)
@@ -117,13 +137,15 @@ bool EffectShaderLensFlare::OnRenderPassBegin(int passIndex, PostEffectRenderCon
 	VERIFY(currentShader >= 0 && currentShader < GetNumberOfVariations());
 	const SubShader& subShader = subShaders[currentShader];
 
+	const IEffectShaderConnections::PropertyScheme* propertyScheme = GetPropertySchemePtr();
+
 	if (passIndex >= 0 && passIndex < static_cast<int>(subShader.m_LightPositions.size()))
 	{
 		const FBVector3d pos(subShader.m_LightPositions[passIndex]);
-		renderContext.OverrideUniform(*mLightPos, static_cast<float>(pos[0]), static_cast<float>(pos[1]), static_cast<float>(pos[2]), subShader.m_DepthAttenuation);
+		renderContext.OverrideUniform(propertyScheme, mLightPos, static_cast<float>(pos[0]), static_cast<float>(pos[1]), static_cast<float>(pos[2]), subShader.m_DepthAttenuation);
 		
 		const FBColor tint(subShader.m_LightColors[passIndex]);
-		renderContext.OverrideUniform(*mTint, static_cast<float>(tint[0]), static_cast<float>(tint[1]), static_cast<float>(tint[2]), 1.0f);
+		renderContext.OverrideUniform(propertyScheme, mTint, static_cast<float>(tint[0]), static_cast<float>(tint[1]), static_cast<float>(tint[2]), 1.0f);
 	}
 
 	return true;
@@ -132,24 +154,17 @@ bool EffectShaderLensFlare::OnRenderPassBegin(int passIndex, PostEffectRenderCon
 /////////////////////////////////////////////////////////////////////////////////////
 // EffectShaderLensFlare::SubShader
 
-void EffectShaderLensFlare::SubShader::Init()
-{
-	m_NumberOfPasses = 1;
-}
-
-bool EffectShaderLensFlare::SubShader::CollectUIValues(int shaderIndex, PostEffectContextProxy* effectContext, int maskIndex)
+bool EffectShaderLensFlare::SubShader::CollectUIValues(int shaderIndex, PostEffectContextProxy* effectContext, int numberOfPasses, int maskIndex)
 {
 	PostPersistentData* pData = effectContext->GetPostProcessData();
 
-	m_NumberOfPasses = 1;
-	
 	double flarePos[3] = { 0.01 * pData->FlarePosX, 0.01 * pData->FlarePosY, 1.0 };
 
 	m_DepthAttenuation = (pData->FlareDepthAttenuation) ? 1.0f : 0.0f;
 
 	if (pData->UseFlareLightObject && pData->FlareLight.GetCount() > 0)
 	{
-		ProcessLightObjects(effectContext, pData, effectContext->GetCamera(), effectContext->GetViewWidth(), effectContext->GetViewHeight(), 
+		ProcessLightObjects(effectContext, pData, effectContext->GetCamera(), numberOfPasses, effectContext->GetViewWidth(), effectContext->GetViewHeight(), 
 			effectContext->GetSystemTimeDT(), effectContext->GetSystemTime(), flarePos);
 	}
 	else
@@ -162,17 +177,17 @@ bool EffectShaderLensFlare::SubShader::CollectUIValues(int shaderIndex, PostEffe
 	return true;
 }
 
-void EffectShaderLensFlare::SubShader::ProcessLightObjects(PostEffectContextProxy* effectContext, PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos)
+void EffectShaderLensFlare::SubShader::ProcessLightObjects(PostEffectContextProxy* effectContext, PostPersistentData* pData, FBCamera* pCamera, 
+	int numberOfPasses, int w, int h, double dt, FBTime systemTime, double* flarePos)
 {
-	m_NumberOfPasses = pData->FlareLight.GetCount();
-	m_LightPositions.resize(m_NumberOfPasses);
-	m_LightColors.resize(m_NumberOfPasses);
-	m_LightAlpha.resize(m_NumberOfPasses, 0.0f);
+	m_LightPositions.resize(numberOfPasses);
+	m_LightColors.resize(numberOfPasses);
+	m_LightAlpha.resize(numberOfPasses, 0.0f);
 
 	FBMatrix mvp;
 	pCamera->GetCameraMatrix(mvp, kFBModelViewProj);
 
-	for (int i = 0; i < m_NumberOfPasses; ++i)
+	for (int i = 0; i < numberOfPasses; ++i)
 	{
 		ProcessSingleLight(effectContext, pData, pCamera, mvp, i, w, h, dt, flarePos);
 	}

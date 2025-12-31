@@ -25,7 +25,7 @@ PostEffectContextMoBu::PostEffectContextMoBu(FBCamera* cameraIn,
 	StandardEffectCollection* effectCollectionIn,
 	const PostEffectContextProxy::Parameters& parametersIn)
 		: postProcessData(postProcessDataIn)
-		, effectCollection(effectCollectionIn)
+		, standardEffects(effectCollectionIn)
 		, effectChain(postProcessDataIn)
 {
 	UpdateContextParameters(cameraIn, parametersIn);
@@ -33,7 +33,7 @@ PostEffectContextMoBu::PostEffectContextMoBu(FBCamera* cameraIn,
 
 StandardEffectCollection* PostEffectContextMoBu::GetEffectCollection() const noexcept
 {
-	return effectCollection;
+	return standardEffects;
 }
 
 const PostEffectContextProxy::Cache& PostEffectContextMoBu::GetReadCache() const
@@ -91,7 +91,7 @@ void PostEffectContextMoBu::Evaluate(
 	PostEffectContextProxy proxy(
 		cameraIn,
 		pEvaluateInfoIn,
-		effectCollection,
+		standardEffects,
 		postProcessData,
 		&effectChain,
 		&shaderPropertyStorage.GetWriteEffectMap(),
@@ -120,7 +120,7 @@ bool PostEffectContextMoBu::IsReadyToRender() const
 
 bool PostEffectContextMoBu::ReloadShaders()
 {
-	if (!effectCollection || !postProcessData)
+	if (!standardEffects || !postProcessData)
 	{
 		return false;
 	}
@@ -129,8 +129,8 @@ bool PostEffectContextMoBu::ReloadShaders()
 	constexpr const bool propagateToUserEffects = false;
 	if (postProcessData->IsNeedToReloadShaders(propagateToUserEffects))
 	{
-		effectCollection->ChangeContext();
-		if (!effectCollection->ReloadShaders())
+		standardEffects->ChangeContext();
+		if (!standardEffects->ReloadShaders())
 		{
 			return false;
 		}
@@ -171,7 +171,7 @@ bool PostEffectContextMoBu::Render(FBEvaluateInfo* pEvaluateInfoIn, PostEffectBu
 	PostEffectContextProxy proxy(
 		GetReadCache().camera,
 		pEvaluateInfoIn,
-		effectCollection,
+		standardEffects,
 		postProcessData,
 		&effectChain,
 		&shaderPropertyStorage.GetReadEffectMap(),

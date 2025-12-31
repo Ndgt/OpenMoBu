@@ -41,8 +41,8 @@ public:
 public:
 
 	// properties
-	ShaderProperty* mColorSampler;
-	ShaderProperty* mTexelSize;
+	ShaderPropertyProxy mColorSampler;
+	ShaderPropertyProxy mTexelSize;
 
 protected:
 	
@@ -54,8 +54,10 @@ protected:
 		return false;
 	}
 
+	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
+
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 
 private:
 	static constexpr const char* SHADER_NAME = "Downscale";

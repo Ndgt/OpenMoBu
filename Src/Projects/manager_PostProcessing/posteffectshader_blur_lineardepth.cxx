@@ -20,32 +20,40 @@ uint32_t EffectShaderBlurLinearDepth::SHADER_NAME_HASH = xxhash32(EffectShaderBl
 
 EffectShaderBlurLinearDepth::EffectShaderBlurLinearDepth(FBComponent* uiComponent)
 	: PostEffectBufferShader(uiComponent)
+{}
+
+void EffectShaderBlurLinearDepth::OnPopulateProperties(PropertyScheme* scheme)
 {
-	mColorTexture = &AddProperty(ShaderProperty("color", "sampler0"))
+	mColorTexture = scheme->AddProperty(ShaderProperty("color", "sampler0"))
 		.SetType(EPropertyType::TEXTURE)
 		.SetFlag(PropertyFlag::ShouldSkip, true)
-		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
+		.SetDefaultValue(CommonEffect::ColorSamplerSlot)
+		.GetProxy();
 
-	mLinearDepthTexture = &AddProperty(ShaderProperty("linearDepth", "linearDepthSampler"))
+	mLinearDepthTexture = scheme->AddProperty(ShaderProperty("linearDepth", "linearDepthSampler"))
 		.SetType(EPropertyType::TEXTURE)
 		.SetFlag(PropertyFlag::ShouldSkip, true)
-		.SetDefaultValue(CommonEffect::LinearDepthSamplerSlot);
+		.SetDefaultValue(CommonEffect::LinearDepthSamplerSlot)
+		.GetProxy();
 
-	mBlurSharpness = &AddProperty(ShaderProperty("blurSharpness", "g_Sharpness"))
+	mBlurSharpness = scheme->AddProperty(ShaderProperty("blurSharpness", "g_Sharpness"))
 		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
 
-	mColorShift = &AddProperty(ShaderProperty("colorShift", "g_ColorShift"))
+	mColorShift = scheme->AddProperty(ShaderProperty("colorShift", "g_ColorShift"))
 		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
 
-	mInvRes = &AddProperty(ShaderProperty("invRes", "g_InvResolutionDirection"))
+	mInvRes = scheme->AddProperty(ShaderProperty("invRes", "g_InvResolutionDirection"))
 		.SetType(EPropertyType::VEC2)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool EffectShaderBlurLinearDepth::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
+bool EffectShaderBlurLinearDepth::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const
 {
 	if (const PostPersistentData* data = effectContext->GetPostProcessData())
 	{
@@ -60,10 +68,6 @@ bool EffectShaderBlurLinearDepth::OnCollectUI(PostEffectContextProxy* effectCont
 		writer(mBlurSharpness, blurSharpness)
 			(mColorShift, 0.0f)
 			(mInvRes, invRes0, invRes1);
-
-		//mBlurSharpness->SetValue(blurSharpness);
-		//mColorShift->SetValue(0.0f);
-		//mInvRes->SetValue(invRes0, invRes1);
 	}
 
 	return true;

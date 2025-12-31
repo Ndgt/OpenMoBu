@@ -14,12 +14,13 @@
 
 
 #include "hashUtils.h"
-
+#include "xxhash.h"
 //
 
 #include <unordered_map>
 #include <string>
 #include <mutex>
+#include <shared_mutex>
 #include <cassert>
 
 class HashDebugRegistry
@@ -27,32 +28,35 @@ class HashDebugRegistry
 public:
 	static void Register(uint32_t hash, const char* str)
 	{
-		std::lock_guard<std::mutex> lock(GetMutex());
+		std::unique_lock lock(GetMutex());
 		
 		auto [it, inserted] = GetMap().emplace(hash, str);
 		if (!inserted && it->second != str)
 		{
 			assert(false && "Hash collision detected!");
+			abort();
 		}
 	}
 
 	static const char* Resolve(uint32_t hash)
 	{
+		std::shared_lock lock(GetMutex());
+
 		auto& map = GetMap();
 		auto it = map.find(hash);
 		return (it != map.end()) ? it->second.c_str() : "<unknown>";
 	}
 
-	static std::string& ResolveString(uint32_t hash)
+	static std::string_view ResolveString(uint32_t hash)
 	{
+		std::shared_lock lock(GetMutex());
+
 		static std::string unknown = "<unknown>";
 		auto& map = GetMap();
 		auto it = map.find(hash);
 		if (it != map.end())
 		{
-			static std::string result;
-			result = it->second;
-			return result;
+			return it->second;
 		}
 		return unknown;
 	}
@@ -64,22 +68,29 @@ private:
 		return map;
 	}
 
-	static std::mutex& GetMutex()
+	static std::shared_mutex& GetMutex()
 	{
-		static std::mutex m;
+		static std::shared_mutex m;
 		return m;
 	}
 };
 
-std::string& ResolveHash32(uint32_t hash)
+const char* ResolveHash32(uint32_t hash)
 {
-	return HashDebugRegistry::ResolveString(hash);
+	return HashDebugRegistry::Resolve(hash);
 }
 
 ////////////////////////////////////////////////////////////////
 
 uint32_t xxhash32(const char* str, size_t len, uint32_t seed)
 {
+	const uint32_t h32 = XXH32(str, len, seed);
+
+	// lookup hash server registry
+	HashDebugRegistry::Register(h32, str);
+
+	return h32;
+	/*
 	constexpr uint32_t PRIME1 = 0x9E3779B1U;
 	constexpr uint32_t PRIME2 = 0x85EBCA77U;
 	constexpr uint32_t PRIME3 = 0xC2B2AE3DU;
@@ -152,4 +163,5 @@ uint32_t xxhash32(const char* str, size_t len, uint32_t seed)
 	HashDebugRegistry::Register(h32, str);
 
 	return h32;
+	*/
 }

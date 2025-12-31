@@ -94,12 +94,14 @@ bool PostEffectBase::IsWorldNormalSamplerUsed() const
 
 bool PostEffectBase::CollectUIValues(PostEffectContextProxy* effectContext)
 {
+	EffectShaderPropertyProcessor propertyProcessor;
+
 	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
 	{
 		if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
 		{
 			FBComponent* effectComponent = bufferShader->GetOwner() ? bufferShader->GetOwner() : effectContext->GetPostProcessData();
-			if (!bufferShader->CollectUIValues(effectComponent, effectContext, GetMaskIndex()))
+			if (!propertyProcessor.CollectUIValues(effectComponent, effectContext, bufferShader, GetMaskIndex()))
 			{
 				return false;
 			}

@@ -14,61 +14,122 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectbase.h"
 
 
-void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::ShaderProperty& shaderProperty, float valueIn)
+void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::ShaderProperty* shaderProperty, float valueIn)
 {
-	ShaderPropertyValue newValue(shaderProperty.GetDefaultValue());
+	if (!shaderProperty)
+		return;
+	
+	ShaderPropertyValue newValue(shaderProperty->GetDefaultValue());
 	newValue.SetValue(valueIn);
-
+	VERIFY(newValue.GetLocation() >= 0);
 	overrideUniforms.emplace_back(std::move(newValue));
 }
 
-void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::ShaderProperty& shaderProperty, float x, float y)
+void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::ShaderProperty* shaderProperty, float x, float y)
 {
-	ShaderPropertyValue newValue(shaderProperty.GetDefaultValue());
+	if (!shaderProperty)
+		return;
+
+	ShaderPropertyValue newValue(shaderProperty->GetDefaultValue());
 	newValue.SetValue(x, y);
-
+	VERIFY(newValue.GetLocation() >= 0);
 	overrideUniforms.emplace_back(std::move(newValue));
 }
 
-void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::ShaderProperty& shaderProperty, float x, float y, float z, float w)
+void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::ShaderProperty* shaderProperty, float x, float y, float z, float w)
 {
-	ShaderPropertyValue newValue(shaderProperty.GetDefaultValue());
-	newValue.SetValue(x, y, z, w);
+	if (!shaderProperty)
+		return;
 
+	ShaderPropertyValue newValue(shaderProperty->GetDefaultValue());
+	newValue.SetValue(x, y, z, w);
+	VERIFY(newValue.GetLocation() >= 0);
 	overrideUniforms.emplace_back(std::move(newValue));
 }
 
-void PostEffectRenderContext::UploadUniforms(const ShaderPropertyStorage::PropertyValueMap* uniformsMap, bool skipTextureProperties) const
+bool PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::PropertyScheme* propertyScheme, const IEffectShaderConnections::ShaderPropertyProxy shaderPropertyProxy, float valueIn)
+{
+	if (!propertyScheme)
+		return false;
+	const IEffectShaderConnections::ShaderProperty* prop = propertyScheme->GetProperty(shaderPropertyProxy);
+	if (!prop)
+		return false;
+	ShaderPropertyValue newValue(prop->GetDefaultValue());
+	newValue.SetValue(valueIn);
+	VERIFY(newValue.GetLocation() >= 0);
+	overrideUniforms.emplace_back(std::move(newValue));
+	return true;
+}
+
+bool PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::PropertyScheme* propertyScheme, const IEffectShaderConnections::ShaderPropertyProxy shaderPropertyProxy, 
+	float x, float y)
+{
+	if (!propertyScheme)
+		return false;
+	const IEffectShaderConnections::ShaderProperty* prop = propertyScheme->GetProperty(shaderPropertyProxy);
+	if (!prop)
+		return false;
+	ShaderPropertyValue newValue(prop->GetDefaultValue());
+	newValue.SetValue(x, y);
+	VERIFY(newValue.GetLocation() >= 0);
+	overrideUniforms.emplace_back(std::move(newValue));
+	return true;
+}
+
+bool PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::PropertyScheme* propertyScheme, const IEffectShaderConnections::ShaderPropertyProxy shaderPropertyProxy,
+	float x, float y, float z, float w)
+{
+	if (!propertyScheme)
+		return false;
+	const IEffectShaderConnections::ShaderProperty* prop = propertyScheme->GetProperty(shaderPropertyProxy);
+	if (!prop)
+		return false;
+	ShaderPropertyValue newValue(prop->GetDefaultValue());
+	newValue.SetValue(x, y, z, w);
+	VERIFY(newValue.GetLocation() >= 0);
+	overrideUniforms.emplace_back(std::move(newValue));
+	return true;
+}
+
+void PostEffectRenderContext::UploadUniforms(GLuint programId, const ShaderPropertyStorage::PropertyValueMap* uniformsMap, bool skipTextureProperties) const
 {
 	// given uniforms
 	if (uniformsMap)
 	{
-		UploadUniformsInternal(*uniformsMap, skipTextureProperties);
+		UploadUniformsInternal(programId, *uniformsMap, skipTextureProperties);
 	}
 	// override uniforms if defined
-	UploadUniformsInternal(overrideUniforms, true);
+	UploadUniformsInternal(programId, overrideUniforms, true);
 }
 
 
-void PostEffectRenderContext::UploadUniformsInternal(const ShaderPropertyStorage::PropertyValueMap& uniformsMap, bool skipTextureProperties) const
+void PostEffectRenderContext::UploadUniformsInternal(GLuint programId, const ShaderPropertyStorage::PropertyValueMap& uniformsMap, bool skipTextureProperties) const
 {
 	for (const ShaderPropertyValue& value : uniformsMap)
 	{
-		UploadUniformValue(value, skipTextureProperties);
+		UploadUniformValue(programId, value, skipTextureProperties);
 	}
 }
 
-void PostEffectRenderContext::UploadUniformValue(const ShaderPropertyValue& value, bool skipTextureProperties)
+void PostEffectRenderContext::UploadUniformValue(GLuint programId, const ShaderPropertyValue& value, bool skipTextureProperties)
 {
 	constexpr int MAX_USER_TEXTURE_SLOTS = 16;
-
-	if (value.GetLocation() < 0)
+	GLint location = value.GetLocation();
+	if (location < 0)
 	{
-		if (value.IsRequired())
+		location = glGetUniformLocation(programId, ResolveHash32(value.GetNameHash()));
+
+		if (location < 0 && value.IsRequired())
 		{
-			LOGE("required property location is not found [%u] %s\n", value.GetNameHash(), ResolveHash32(value.GetNameHash()));
+			LOGE("failed to find property location [%u] %s\n", value.GetNameHash(), ResolveHash32(value.GetNameHash()));
+			return;
 		}
-		return;
+		//LOGE("required property location is not cached [%u] %s\n", value.GetNameHash(), ResolveHash32(value.GetNameHash()).c_str());
+
+		if (location < 0)
+		{
+			return;
+		}
 	}
 
 	const float* floatData = value.GetFloatData();
@@ -80,11 +141,11 @@ void PostEffectRenderContext::UploadUniformValue(const ShaderPropertyValue& valu
 	switch (value.GetType())
 	{
 	case EPropertyType::INT:
-		glUniform1i(value.GetLocation(), static_cast<int>(floatData[0]));
+		glUniform1i(location, static_cast<int>(floatData[0]));
 		break;
 
 	case EPropertyType::BOOL:
-		glUniform1f(value.GetLocation(), floatData[0]);
+		glUniform1f(location, floatData[0]);
 		break;
 
 	case EPropertyType::FLOAT:
@@ -93,19 +154,19 @@ void PostEffectRenderContext::UploadUniformValue(const ShaderPropertyValue& valu
 		if (value.IsInvertValue())
 			scaledValue = 1.0f - scaledValue;
 
-		glUniform1f(value.GetLocation(), scaledValue);
+		glUniform1f(location, scaledValue);
 	} break;
 
 	case EPropertyType::VEC2:
-		glUniform2fv(value.GetLocation(), 1, floatData);
+		glUniform2fv(location, 1, floatData);
 		break;
 
 	case EPropertyType::VEC3:
-		glUniform3fv(value.GetLocation(), 1, floatData);
+		glUniform3fv(location, 1, floatData);
 		break;
 
 	case EPropertyType::VEC4:
-		glUniform4fv(value.GetLocation(), 1, floatData);
+		glUniform4fv(location, 1, floatData);
 		break;
 
 	case EPropertyType::TEXTURE:
@@ -118,7 +179,7 @@ void PostEffectRenderContext::UploadUniformValue(const ShaderPropertyValue& valu
 		const int textureSlot = static_cast<int>(floatData[0]);
 		if (textureSlot >= 0 && textureSlot < MAX_USER_TEXTURE_SLOTS)
 		{
-			glUniform1i(value.GetLocation(), textureSlot);
+			glUniform1i(location, textureSlot);
 		}	
 	} break;
 

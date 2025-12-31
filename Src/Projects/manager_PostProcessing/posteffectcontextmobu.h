@@ -80,7 +80,7 @@ private:
 	// that is a key to the context and have to be the same in any thread	
 	PostPersistentData* postProcessData{ nullptr }; //!< this is a main post process object for common effects properties
 	
-	StandardEffectCollection* effectCollection{ nullptr }; //!< standard effects collection to use
+	StandardEffectCollection* standardEffects{ nullptr }; //!< standard effects collection to use
 
 	PostEffectChain effectChain; //!< build a chain from a postProcessData
 	

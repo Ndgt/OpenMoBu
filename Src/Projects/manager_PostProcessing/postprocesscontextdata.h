@@ -35,7 +35,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 struct PostProcessContextData
 {
 public:
-	
+	static const int MAX_PANE_COUNT = 4;
+
 	FBTime				mStartSystemTime;
 	double				mLastSystemTime{ std::numeric_limits<double>::max() };
 	double				mLastLocalTime{ std::numeric_limits<double>::max() };
@@ -46,7 +47,7 @@ public:
 	int				mEvaluatePaneCount{ 0 }; // @see mEvaluatePanes
 	int				mRenderPaneCount{ 0 }; // @see mRenderPanes
 	
-	bool			mSchematicView[4];
+	bool			mSchematicView[MAX_PANE_COUNT];
 	bool			mVideoRendering = false;
 	std::atomic<bool> isReadyToEvaluate{ false };
 	std::atomic<bool> isNeedToResetPaneSettings{ false };
@@ -80,15 +81,7 @@ public:
 			camera = nullptr;
 		}
 	};
-	/*
-	struct SPostFXContext
-	{
-		PostEffectChain			effectChain; // evaluation and render - prepared chain of effects and property values
-		PostPersistentData*		persistentData{ nullptr }; // UI to build effects chain and read properties from
-		ShaderPropertyStorage	propertyStorage; // thread safe read/write between UI properties and shader uniforms
-	};
-	*/
-	static const int MAX_PANE_COUNT = 4;
+	
 	SPaneData	mEvaluatePanes[MAX_PANE_COUNT];	//!< choose a propriate settings according to a pane camera
 	SPaneData	mRenderPanes[MAX_PANE_COUNT];
 
@@ -103,6 +96,8 @@ public:
 	
 	void    Init();
 	
+	void VideoRenderingBegin();
+	void VideoRenderingEnd();
 
 	void	PreRenderFirstEntry();
 

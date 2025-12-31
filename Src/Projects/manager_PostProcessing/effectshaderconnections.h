@@ -74,6 +74,12 @@ class IEffectShaderConnections
 {
 public:
 
+	struct ShaderPropertyProxy
+	{
+		int32_t index{ -1 }; // index in the property array (in case array is not changed or sorted)
+		uint32_t nameHash{ 0 }; // hash key of a name to double check that we reference to a correct property
+	};
+
 	// represents a single shader property, its type, name, value, etc.
 	struct MANAGER_POSTPROCESSING_API ShaderProperty
 	{
@@ -84,20 +90,27 @@ public:
 		ShaderProperty(const ShaderProperty& other);
 
 		// constructor to associate property with fbProperty, recognize the type
-		ShaderProperty(const char* nameIn, const char* uniformNameIn, FBProperty* fbPropertyIn = nullptr);
-		ShaderProperty(const char* nameIn, const char* uniformNameIn, EPropertyType typeIn, FBProperty* fbPropertyIn = nullptr);
+		ShaderProperty(std::string_view nameIn, std::string_view uniformNameIn, FBProperty* fbPropertyIn = nullptr);
+		ShaderProperty(std::string_view nameIn, std::string_view uniformNameIn, EPropertyType typeIn, FBProperty* fbPropertyIn = nullptr);
 
 		void SetGeneratedByUniform(bool isGenerated) { isGeneratedByUniform = isGenerated; }
 		bool IsGeneratedByUniform() const { return isGeneratedByUniform; }
 
-		uint32_t ComputeNameHash() const;
+		// get proxy of this property for a quick access from a property scheme
+		ShaderPropertyProxy GetProxy() const
+		{
+			return { indexInArray, GetNameHash() };
+		}
 
 		void SetName(std::string_view nameIN);
-		inline const char* GetName() const { return name; }
-		inline uint32_t GetNameHash() const { return mDefaultValue.GetNameHash(); }
-		void SetUniformName(std::string_view uniformNameIN) { strncpy_s(uniformName, uniformNameIN.data(), uniformNameIN.size()); }
-		inline const char* GetUniformName() const { return uniformName; }
-		inline char* GetUniformNameAccess() { return uniformName; }
+		void SetNameHash(uint32_t nameHashIn);
+		inline const char* GetName() const noexcept;
+		inline uint32_t GetNameHash() const;
+		void SetUniformName(std::string_view uniformNameIN);
+		void SetUniformNameHash(uint32_t hashIn);
+		inline const char* GetUniformName() const noexcept;
+		inline uint32_t GetUniformNameHash() const;
+		//inline char* GetUniformNameAccess() { return uniformName; }
 
 		void SetLocation(GLint locationIN) {
 			mDefaultValue.SetLocation(locationIN);
@@ -120,7 +133,7 @@ public:
 
 		inline void SetFBComponent(FBComponent* fbComponentIN) { fbComponent = fbComponentIN; }
 		inline FBComponent* GetFBComponent() const { return fbComponent; }
-
+		
 		ShaderProperty& SetDefaultValue(int valueIn);
 		ShaderProperty& SetDefaultValue(bool valueIn);
 		ShaderProperty& SetDefaultValue(float valueIn);
@@ -134,9 +147,8 @@ public:
 		ShaderPropertyValue& GetDefaultValue() { return mDefaultValue; }
 		const ShaderPropertyValue& GetDefaultValue() const { return mDefaultValue; }
 		
-		void SwapValueBuffers();
-
 		static void ReadFBPropertyValue(
+			FBProperty* fbProperty,
 			ShaderPropertyValue& value, 
 			const ShaderProperty& shaderProperty, 
 			const PostEffectContextProxy* effectContext,
@@ -146,38 +158,85 @@ public:
 		//  we read first object in the list and can have either texture of shader user object type from it
 		static void ReadTextureConnections(ShaderPropertyValue& value, FBProperty* fbProperty);
 
+		void SetIndexInArray(int32_t indexInArrayIn) { indexInArray = indexInArrayIn; }
+		int32_t GetIndexInArray() const { return indexInArray; }
+
 	private:
 		
 		ShaderPropertyValue mDefaultValue;
 		
-		char name[MAX_NAME_LENGTH]{ 0 };
-		char uniformName[MAX_NAME_LENGTH]{ 0 };
+		uint32_t nameHash{ 0 };
+		uint32_t uniformNameHash{ 0 };
+
+		int32_t indexInArray{ -1 }; // for a quick access in the property array
+
+		//char name[MAX_NAME_LENGTH]{ 0 };
+		//char uniformName[MAX_NAME_LENGTH]{ 0 };
 		
-		bool isGeneratedByUniform{ false };
-
-		bool padding[3]{ false };
-
 		std::bitset<PROPERTY_BITSET_SIZE> flags;
 
+		bool isGeneratedByUniform{ false };
+
+
+		// TODO: move that into a evaluator cache (per effect shader)
 		FBProperty* fbProperty{ nullptr };
 		FBComponent* fbComponent{ nullptr }; // the owner of the property
 
+		// calculate a hash and add it into a hash server
+		uint32_t ComputeNameHash(std::string_view s) const;
+	};
+
+	// result of glsl uniforms reflection
+	struct PropertyScheme
+	{
+		PropertyScheme()
+		{
+			ResetSystemUniformLocations();
+		}
+
+		ShaderProperty& AddProperty(const ShaderProperty& property);
+		ShaderProperty& AddProperty(ShaderProperty&& property);
+
+		bool IsEmpty() const { return properties.empty(); }
+
+		ShaderProperty* FindPropertyByHash(uint32_t nameHash);
+		const ShaderProperty* FindPropertyByHash(uint32_t nameHash) const;
+
+		ShaderProperty* FindProperty(const std::string_view name);
+		const ShaderProperty* FindProperty(const std::string_view name) const;
+		ShaderProperty* FindPropertyByUniform(const std::string_view name);
+		const ShaderProperty* FindPropertyByUniform(const std::string_view name) const;
+
+		ShaderProperty* GetProperty(const ShaderPropertyProxy proxy);
+		const ShaderProperty* GetProperty(const ShaderPropertyProxy proxy) const;
+
+		size_t GetNumberOfProperties() const { return properties.size(); }
+
+		const std::vector<ShaderProperty>& GetProperties() const { return properties; }
+
+		void	ResetSystemUniformLocations();
+
+		void SetSystemUniformLoc(ShaderSystemUniform u, GLint location) noexcept {
+			systemUniformLocations[static_cast<uint32_t>(u)] = location;
+		}
+		inline GLint GetSystemUniformLoc(ShaderSystemUniform u) const noexcept {
+			return systemUniformLocations[static_cast<uint32_t>(u)];
+		}
+
+		void AssociateFBProperties(FBComponent* component);
+
+	private:
+		std::vector<ShaderProperty> properties;
+		std::array<GLint, static_cast<int>(ShaderSystemUniform::COUNT)> systemUniformLocations;
 	};
 
 	virtual ~IEffectShaderConnections() = default;
 
-	virtual ShaderProperty& AddProperty(const ShaderProperty& property) = 0;
-	virtual ShaderProperty& AddProperty(ShaderProperty&& property) = 0;
-
 	virtual int GetNumberOfProperties() const = 0;
-	virtual ShaderProperty& GetProperty(int index) = 0;
+	virtual const ShaderProperty& GetProperty(int index) const = 0;
 	
-	virtual ShaderProperty* FindProperty(const std::string_view name) = 0;
+	virtual const ShaderProperty* FindProperty(const std::string_view name) const = 0;
 	
-	// look for a UI interface, and read properties and its values
-	// we should write values into effectContext's shaderPropertyStorage
-	virtual bool CollectUIValues(FBComponent* componentIn, PostEffectContextProxy* effectContext, int maskIndex) = 0;
-
 	// use uniformName to track down some type casts
 	static FBPropertyType ShaderPropertyToFBPropertyType(const ShaderProperty& prop);
 

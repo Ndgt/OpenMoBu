@@ -3,7 +3,7 @@
 
 // posteffectdisplacement.h
 /*
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -42,22 +42,21 @@ public:
 
 protected:
 
-	ShaderProperty* mTime;
-	ShaderProperty* mUseQuakeEffect;
-	ShaderProperty* mXDistMag;
-	ShaderProperty* mYDistMag;
-	ShaderProperty* mXSineCycles;
-	ShaderProperty* mYSineCycles;
+	ShaderPropertyProxy mTime;
+	ShaderPropertyProxy mUseQuakeEffect;
+	ShaderPropertyProxy mXDistMag;
+	ShaderPropertyProxy mYDistMag;
+	ShaderPropertyProxy mXSineCycles;
+	ShaderPropertyProxy mYSineCycles;
 
 	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
 	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
 
 	// this is a predefined effect shader, properties are defined manually
-	virtual bool DoPopulatePropertiesFromUniforms() const override {
-		return false;
-	}
+	virtual bool DoPopulatePropertiesFromUniforms() const override { return false; }
 
-	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
+	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
 
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 };
 

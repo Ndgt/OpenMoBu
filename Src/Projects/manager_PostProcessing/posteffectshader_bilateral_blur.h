@@ -36,8 +36,9 @@ public:
 	virtual int GetNumberOfPasses() const override { return 1; }
 
 	//! an effect public name
-	const char* GetName() const override { return SHADER_NAME; }
-	uint32_t GetNameHash() const override { return SHADER_NAME_HASH; }
+	//! NOTE: public name can be assigned from the connected component
+	const char* GetName() const override;
+	uint32_t GetNameHash() const override;
 	//! get a filename of vertex shader, for this effect. returns a relative filename
 	const char* GetVertexFname(const int variationIndex) const override { return VERTEX_SHADER_FILE; }	
 	//! get a filename of a fragment shader, for this effect, returns a relative filename
@@ -49,14 +50,17 @@ public:
 	static constexpr const char* VERTEX_SHADER_FILE = "/GLSL/simple130.glslv";
 	static constexpr const char* FRAGMENT_SHADER_FILE = "/GLSL/imageBlur.glslf";
 
-	ShaderProperty* ColorTexture{ nullptr };
-	ShaderProperty* BlurScale{ nullptr };
+	ShaderPropertyProxy ColorTexture;
+	ShaderPropertyProxy BlurScale;
 
 protected:
 
-	virtual const char* GetUseMaskingPropertyName() const override { return nullptr; }
-	virtual const char* GetMaskingChannelPropertyName() const override { return nullptr; }
+	// NOTE: masking property name can be assigned from the connected UI component
+	virtual const char* GetUseMaskingPropertyName() const override;
+	virtual const char* GetMaskingChannelPropertyName() const override;
 	virtual bool DoPopulatePropertiesFromUniforms() const override { return false; }
+
+	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
 
 private:
 	

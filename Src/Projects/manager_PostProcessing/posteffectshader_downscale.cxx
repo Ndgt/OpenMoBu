@@ -18,21 +18,25 @@ uint32_t PostEffectShaderDownscale::SHADER_NAME_HASH = xxhash32(PostEffectShader
 
 PostEffectShaderDownscale::PostEffectShaderDownscale(FBComponent* uiComponent)
 	: PostEffectBufferShader(uiComponent)
-{
-	mColorSampler = &AddProperty(ShaderProperty("color", "sampler"))
-		.SetType(EPropertyType::TEXTURE)
-		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
+{}
 
-	mTexelSize = &AddProperty(ShaderProperty("texelSize", "texelSize"))
+void PostEffectShaderDownscale::OnPopulateProperties(PropertyScheme* scheme)
+{
+	mColorSampler = scheme->AddProperty(ShaderProperty("color", "sampler"))
+		.SetType(EPropertyType::TEXTURE)
+		.SetDefaultValue(CommonEffect::ColorSamplerSlot)
+		.GetProxy();
+
+	mTexelSize = scheme->AddProperty(ShaderProperty("texelSize", "texelSize"))
 		.SetType(EPropertyType::VEC2)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderDownscale::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
+bool PostEffectShaderDownscale::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const
 {
 	ShaderPropertyWriter writer(this, effectContext);
 	writer(mTexelSize, 1.0f / static_cast<float>(effectContext->GetViewWidth()), 1.0f / static_cast<float>(effectContext->GetViewHeight()));
-	//mTexelSize->SetValue(1.0f / static_cast<float>(effectContext->GetViewWidth()), 1.0f / static_cast<float>(effectContext->GetViewHeight()));
 	return true;
 }

@@ -36,17 +36,11 @@ public:
 	EffectShaderSSAO* GetBufferShaderTypedPtr();
 	const EffectShaderSSAO* GetBufferShaderTypedPtr() const;
 
-	//virtual bool Load(const char* shaderLocation) override;
-
-	//virtual bool CollectUIValues(IPostEffectContext* effectContext) override;
-
 	virtual void Render(PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext) override;
 
 protected:
 
 	std::unique_ptr<EffectShaderSSAO>		mShaderSSAO;
-	//std::unique_ptr<EffectShaderMix>		mShaderMix;
-	//std::unique_ptr<EffectShaderBlurLinearDepth> mShaderBlur;
 };
 
 /// <summary>
@@ -78,11 +72,11 @@ protected:
 	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
 
 	// this is a predefined effect shader, properties are defined manually
-	virtual bool DoPopulatePropertiesFromUniforms() const override {
-		return false;
-	}
+	virtual bool DoPopulatePropertiesFromUniforms() const override { return false; }
 
-	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
+	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
+
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 
 	//! bind effect shader program
 	bool Bind() override;
@@ -91,21 +85,21 @@ protected:
 
 private:
 
-	ShaderProperty* mProjInfo;
-	ShaderProperty* mProjOrtho;
-	ShaderProperty* mInvFullResolution;
-	ShaderProperty* mRadiusToScreen;
+	ShaderPropertyProxy mProjInfo;
+	ShaderPropertyProxy mProjOrtho;
+	ShaderPropertyProxy mInvFullResolution;
+	ShaderPropertyProxy mRadiusToScreen;
 	
-	ShaderProperty* mNegInvR2;
-	ShaderProperty* mNDotVBias;
+	ShaderPropertyProxy mNegInvR2;
+	ShaderPropertyProxy mNDotVBias;
 
-	ShaderProperty* mAOMultiplier;
-	ShaderProperty* mPowExponent;
+	ShaderPropertyProxy mAOMultiplier;
+	ShaderPropertyProxy mPowExponent;
 
-	ShaderProperty* mOnlyAO;
+	ShaderPropertyProxy mOnlyAO;
 	
 	// texture Id
-	GLuint	hbaoRandomTexId;
+	GLuint	hbaoRandomTexId{ 0 };
 
 	float		mRandom[4]{ 0.0f };
 	

@@ -34,30 +34,30 @@ public:
 	int GetNumberOfVariations() const override { return 1; }
 	int GetNumberOfPasses() const override { return 1; }	
 
-	const char* GetName() const override { return SHADER_NAME; }
-	uint32_t GetNameHash() const override { return SHADER_NAME_HASH; }
+	const char* GetName() const override;
+	uint32_t GetNameHash() const override;
 	const char* GetVertexFname(const int variationIndex) const override { return SHADER_VERTEX; }
 	const char* GetFragmentFname(const int variationIndex) const override { return SHADER_FRAGMENT; }
 
 public:
 
 	// properties
-	ShaderProperty* mColorSamplerA{ nullptr };
-	ShaderProperty* mColorSamplerB{ nullptr };
-	ShaderProperty* mBloom{ nullptr };
+	ShaderPropertyProxy mColorSamplerA;
+	ShaderPropertyProxy mColorSamplerB;
+	ShaderPropertyProxy mBloom;
 
 protected:
 	
-	const char* GetUseMaskingPropertyName() const override { return nullptr; }
-	const char* GetMaskingChannelPropertyName() const override { return nullptr; }
+	const char* GetUseMaskingPropertyName() const override;
+	const char* GetMaskingChannelPropertyName() const override;
 
 	// this is a predefined effect shader, properties are defined manually
-	virtual bool DoPopulatePropertiesFromUniforms() const override {
-		return false;
-	}
+	virtual bool DoPopulatePropertiesFromUniforms() const override { return false; }
+
+	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 
 private:
 	static constexpr const char* SHADER_NAME = "Mix";

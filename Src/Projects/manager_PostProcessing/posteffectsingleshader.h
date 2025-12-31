@@ -16,19 +16,10 @@ public:
 		, mBufferShader(std::make_unique<T>(nullptr)) // making it without an owner component
 	{
 	}
-	virtual ~PostEffectSingleShader()
-	{
-	}
+	virtual ~PostEffectSingleShader() = default;
 
-	virtual bool IsActive() const override
-	{
-		return true;
-	}
-
-	virtual const char* GetName() const override
-	{
-		return mBufferShader->GetName();
-	}
+	virtual bool IsActive() const override { return mBufferShader->IsActive(); }
+	virtual const char* GetName() const override { return mBufferShader->GetName(); }
 
 	virtual int GetNumberOfBufferShaders() const override { return 1; }
 	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) override { return static_cast<PostEffectBufferShader*>(mBufferShader.get()); }
@@ -41,16 +32,3 @@ protected:
 
 	std::unique_ptr<T>		mBufferShader;
 };
-
-
-// TODO: effect mix shaders with input - for effect which do processing on input and then a computed output mix it up with input source
-
-/*
-class ScopedEffectBind {
-public:
-	ScopedEffectBind(PostEffectBase* effect) : mEffect(effect) { mEffect->Bind(); }
-	~ScopedEffectBind() { mEffect->UnBind(); }
-private:
-	PostEffectBase* mEffect;
-};
-*/

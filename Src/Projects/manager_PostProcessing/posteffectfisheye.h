@@ -45,19 +45,19 @@ public:
 
 protected:
 
-	ShaderProperty* mAmount;
-	ShaderProperty* mLensRadius;
-	ShaderProperty* mSignCurvature;
+	ShaderPropertyProxy mAmount;
+	ShaderPropertyProxy mLensRadius;
+	ShaderPropertyProxy mSignCurvature;
 
 	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
 	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
 
 	// this is a predefined effect shader, properties are defined manually
-	virtual bool DoPopulatePropertiesFromUniforms() const override {
-		return false;
-	}
+	virtual bool DoPopulatePropertiesFromUniforms() const override { return false; }
 
-	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
+	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
+
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 };
 
 

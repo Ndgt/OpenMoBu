@@ -44,11 +44,11 @@ public:
 public:
 
 	// properties
-	ShaderProperty* mColorTexture{ nullptr };
-	ShaderProperty* mLinearDepthTexture{ nullptr };
-	ShaderProperty* mBlurSharpness{ nullptr };
-	ShaderProperty* mInvRes{ nullptr };
-	ShaderProperty* mColorShift{ nullptr };
+	ShaderPropertyProxy mColorTexture;
+	ShaderPropertyProxy mLinearDepthTexture;
+	ShaderPropertyProxy mBlurSharpness;
+	ShaderPropertyProxy mInvRes;
+	ShaderPropertyProxy mColorShift;
 
 protected:
 	static constexpr const char* SHADER_NAME = "Blur w/th LinearDepth";
@@ -62,6 +62,8 @@ protected:
 	// this is a predefined effect shader, properties are defined manually
 	bool DoPopulatePropertiesFromUniforms() const override { return false; }
 
+	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
+
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
+	bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 };

@@ -19,6 +19,21 @@ class FrameBuffer;
 class PostEffectBuffers;
 class GLSLShaderProgram;
 class ShaderPropertyStorage;
+class PostEffectBufferShader;
+
+// evaluate the property scheme, read property values and store them into effect shader property value storage
+class EffectShaderPropertyProcessor
+{
+public:
+
+	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
+	// in case of evaluation, the method must be thread-safe
+	// the property values should be written into the ShaderPropertyStorage (effectContext)
+	bool CollectUIValues(FBComponent* component, PostEffectContextProxy* effectContext, const PostEffectBufferShader* effectShader, int maskIndex);
+
+private:
+
+};
 
 /// <summary>
 /// effect with one or more gpu shaders (number of variations, mostly 1)
@@ -67,9 +82,7 @@ public:
 	/// </summary>
 	bool Load(const char* shaderLocation);
 
-	//! is being called after \ref Load is succeed
-	//!  so we could initialized some property or system uniform locations
-	bool InitializeUniforms(const int variationIndex);
+	
 
 	//! get a pointer to a (current variance) shader program
 	GLSLShaderProgram* GetShaderPtr();
@@ -106,25 +119,54 @@ public:
 	// shader version, increments on every shader reload
 	int GetVersion() const { return version; }
 
+
+protected:
+	friend class EffectShaderPropertyProcessor;
+	friend class PostEffectRenderContext;
+
+	
+	std::unique_ptr<const PropertyScheme> mRenderPropertyScheme; // the property scheme to use in render thread
+
+	ShaderPropertyProxy UseMaskingProperty;
+
+	void MakeCommonProperties(PropertyScheme* scheme);
+
+	virtual void OnPopulateProperties(PropertyScheme* scheme) = 0;
+
+	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
+	//virtual void OnPropertyAdded(ShaderProperty& property) {}
+
+	// user object can remove previously created properties
+	virtual void OnPropertySchemeRemoved(const PropertyScheme* scheme) {}
+	// user object can make new fb properties according to populated property scheme
+	virtual void OnPropertySchemeAdded(const PropertyScheme* scheme) {}
+
+	virtual bool OnPrepareUniforms(const int variationIndex) { return true; }
+
 public:
+	
+	const PropertyScheme* GetPropertySchemePtr() const { return mRenderPropertyScheme.get(); }
+
 	//
 	// IEffectShaderConnections
-	virtual ShaderProperty& AddProperty(const ShaderProperty& property) override;
-	virtual ShaderProperty& AddProperty(ShaderProperty&& property) override;
+	//virtual ShaderProperty& AddProperty(const ShaderProperty& property) override;
+	//virtual ShaderProperty& AddProperty(ShaderProperty&& property) override;
 
 	virtual int GetNumberOfProperties() const override;
-	virtual ShaderProperty& GetProperty(int index) override;
-	virtual ShaderProperty* FindProperty(const std::string_view name) override;
-	ShaderProperty* FindPropertyByUniformName(const char* name) const;
+	virtual const ShaderProperty& GetProperty(int index) const override;
+	virtual const ShaderProperty* FindProperty(const std::string_view name) const override;
+	const ShaderProperty* FindPropertyByUniformName(const std::string_view name) const;
 
-	void ClearGeneratedByUniformProperties();
+	//void ClearGeneratedByUniformProperties();
 
-	void MakeCommonProperties();
+	//! is being called after \ref Load is succeed
+	//!  so we could initialized some property or system uniform locations
+	bool InitializeUniforms(PropertyScheme* scheme, int variationIndex);
 
-	int ReflectUniforms();
+	int ReflectUniforms(PropertyScheme* scheme) const;
 
 	// apply default values to a shader uniforms
-	void UploadDefaultValues();
+	void UploadDefaultValues(PropertyScheme* scheme);
 
 	/**
 	* When one of the uniforms is a texture which is connected to a result of another effect,
@@ -134,37 +176,24 @@ public:
 	void AutoUploadUniforms(const PostEffectRenderContext& renderContext,
 		const PostEffectContextProxy* effectContext, bool skipTextureProperties);
 
-	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	bool CollectUIValues(FBComponent* component, PostEffectContextProxy* effectContext, int maskIndex) override;
-
 	// look for a connected input effect shaders and reload them if needed
 	bool ReloadPropertyShaders(ShaderPropertyStorage::EffectMap* effectMap);
 
-protected:
-
-	std::unordered_map<uint32_t, ShaderProperty>		mProperties;
-	std::vector<uint32_t> mPropertyOrder; // deterministic order
-
-	ShaderProperty* UseMaskingProperty{ nullptr };
-
-	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
-	virtual void OnPropertyAdded(ShaderProperty& property)
-	{}
 
 protected:
 
 	// system uniforms
 
 	static const char* gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)];
-	std::array<GLint, static_cast<int>(ShaderSystemUniform::COUNT)> mSystemUniformLocations;
 	
-	void	ResetSystemUniformLocations();
-	int		FindSystemUniform(const char* uniformName); // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
-	bool	IsInternalGLSLUniform(const char* uniformName);
+	
+	
+	int		FindSystemUniform(const char* uniformName) const; // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
+	bool	IsInternalGLSLUniform(const char* uniformName) const;
 	void	BindSystemUniforms(const PostEffectContextProxy* effectContext) const;
 
 	inline GLint GetSystemUniformLoc(ShaderSystemUniform u) const noexcept {
-		return mSystemUniformLocations[static_cast<uint32_t>(u)];
+		return mRenderPropertyScheme->GetSystemUniformLoc(u);
 	}
 
 protected:
@@ -172,7 +201,7 @@ protected:
 	// variances of post effect
 
 	int mCurrentShader{ 0 }; //!< current variance of a shader
-	bool bHasShaderChanged{ false };
+	bool bIsNeedToUpdatePropertyScheme{ false };
 	bool isActive{ true };
 	std::vector<std::unique_ptr<GLSLShaderProgram>>	mShaders; //!< store a list of all variances
 
@@ -195,8 +224,9 @@ protected:
 	//!< if true, once shader is loaded, let's inspect all the uniforms and make properties from them
 	virtual bool DoPopulatePropertiesFromUniforms() const = 0;
 
-	virtual bool OnPrepareUniforms(const int variationIndex) { return true; }
-	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) { return true; }
+	
+	// should be thread safe, write into effect context
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const { return true; }
 	virtual void OnUniformsUploaded(int passIndex) {}
 
 	//! bind effect shader program
@@ -206,6 +236,9 @@ protected:
 
 	// we going to render all input connected effect shaders and prepare input connected textures
 	void PreRender(PostEffectRenderContext& renderContextParent, PostEffectContextProxy* effectContext) const;
+
+	// call at the beginning of the Render method
+	virtual void OnRenderBegin(PostEffectRenderContext& renderContextParent, PostEffectContextProxy* effectContext) {}
 
 	//! derived classes could have own preparation steps before each pass
 	virtual bool OnRenderPassBegin(int passIndex, PostEffectRenderContext& renderContext) { return true; }

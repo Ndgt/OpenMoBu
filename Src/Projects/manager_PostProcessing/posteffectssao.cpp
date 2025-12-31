@@ -28,8 +28,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 PostEffectSSAO::PostEffectSSAO()
 	: PostEffectBase()
 	, mShaderSSAO(std::make_unique<EffectShaderSSAO>(nullptr)) // making it without an owner component
-	//, mShaderMix(std::make_unique<EffectShaderMix>(nullptr))
-	//, mShaderBlur(std::make_unique<EffectShaderBlurLinearDepth>(nullptr))
 {
 }
 
@@ -60,26 +58,7 @@ const EffectShaderSSAO* PostEffectSSAO::GetBufferShaderTypedPtr() const
 { 
 	return mShaderSSAO.get(); 
 }
-/*
-bool PostEffectSSAO::Load(const char* shaderLocation)
-{
-	if (!mShaderMix->Load(shaderLocation))
-		return false;
-	if (!mShaderBlur->Load(shaderLocation))
-		return false;
 
-	return PostEffectBase::Load(shaderLocation);
-}
-
-bool PostEffectSSAO::CollectUIValues(IPostEffectContext* effectContext)
-{
-	mShaderMix->CollectUIValues(effectContext, 0);
-	//mShaderMix->mBloom->SetValue(0.0f, 0.0f, 0.0f, 0.0f); // disable bloom in mix shader
-	mShaderBlur->CollectUIValues(effectContext, 0);
-	
-	return PostEffectBase::CollectUIValues(effectContext);
-}
-*/
 void PostEffectSSAO::Render(PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext)
 {
 	// render SSAO into its own buffer
@@ -130,8 +109,8 @@ void PostEffectSSAO::Render(PostEffectRenderContext& renderContext, PostEffectCo
 			renderContextBlur.generateMips = false;
 
 			const float color_shift = 0.0f;
-			renderContextBlur.OverrideUniform(*shaderBlur->mColorShift, color_shift);
-			renderContextBlur.OverrideUniform(*shaderBlur->mInvRes, 1.0f / static_cast<float>(outWidth), 1.0f / static_cast<float>(outHeight));
+			renderContextBlur.OverrideUniform(shaderBlur->GetPropertySchemePtr(), shaderBlur->mColorShift, color_shift);
+			renderContextBlur.OverrideUniform(shaderBlur->GetPropertySchemePtr(), shaderBlur->mInvRes, 1.0f / static_cast<float>(outWidth), 1.0f / static_cast<float>(outHeight));
 
 			shaderBlur->Render(renderContextBlur, effectContext);
 		}
@@ -146,7 +125,7 @@ void PostEffectSSAO::Render(PostEffectRenderContext& renderContext, PostEffectCo
 
 		PostEffectRenderContext renderContextMix = renderContext;
 		// disable bloom in mix shader
-		renderContextMix.OverrideUniform(*shaderMix->mBloom, 0.0f, 0.0f, 0.0f, 0.0f);
+		renderContextMix.OverrideUniform(shaderMix->GetPropertySchemePtr(), shaderMix->mBloom, 0.0f, 0.0f, 0.0f, 0.0f);
 
 		shaderMix->Render(renderContextMix, effectContext);
 
@@ -174,52 +153,6 @@ EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 	, e2(rd())
 	, dist(0, 1.0)
 {
-	MakeCommonProperties();
-
-	AddProperty(ShaderProperty("color", "colorSampler"))
-		.SetType(EPropertyType::TEXTURE)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
-		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
-
-	AddProperty(ShaderProperty("random", "texRandom"))
-		.SetType(EPropertyType::TEXTURE)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
-		.SetDefaultValue(CommonEffect::UserSamplerSlot);
-
-	mProjInfo = &AddProperty(ShaderProperty("projInfo", "projInfo", nullptr))
-		.SetType(EPropertyType::VEC4)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
-	mProjOrtho = &AddProperty(ShaderProperty("projOrtho", "projOrtho", nullptr))
-		.SetType(EPropertyType::INT)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
-
-	mInvFullResolution = &AddProperty(ShaderProperty("InvFullResolution", "InvFullResolution", nullptr))
-		.SetType(EPropertyType::VEC2)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
-
-	mRadiusToScreen = &AddProperty(ShaderProperty("RadiusToScreen", "RadiusToScreen", nullptr))
-		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
-	
-	mNegInvR2 = &AddProperty(ShaderProperty("NegInvR2", "NegInvR2", nullptr))
-		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
-	mNDotVBias = &AddProperty(ShaderProperty("NDotVBias", "NDotVBias", nullptr))
-		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
-
-	mAOMultiplier = &AddProperty(ShaderProperty("AOMultiplier", "AOMultiplier", nullptr))
-		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
-
-	mPowExponent = &AddProperty(ShaderProperty("PowExponent", "PowExponent", nullptr))
-		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
-
-	mOnlyAO = &AddProperty(ShaderProperty("OnlyAO", "OnlyAO", nullptr))
-		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
-	
 	// lazy initialize of random texture on first render
 	hbaoRandomTexId = 0;
 }
@@ -248,7 +181,63 @@ void EffectShaderSSAO::DeleteTextures()
 	}
 }
 
-bool EffectShaderSSAO::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
+void EffectShaderSSAO::OnPopulateProperties(PropertyScheme* scheme)
+{
+	scheme->AddProperty(ShaderProperty("color", "colorSampler"))
+		.SetType(EPropertyType::TEXTURE)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
+
+	scheme->AddProperty(ShaderProperty("random", "texRandom"))
+		.SetType(EPropertyType::TEXTURE)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetDefaultValue(CommonEffect::UserSamplerSlot);
+
+	mProjInfo = scheme->AddProperty(ShaderProperty("projInfo", "projInfo", nullptr))
+		.SetType(EPropertyType::VEC4)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
+	mProjOrtho = scheme->AddProperty(ShaderProperty("projOrtho", "projOrtho", nullptr))
+		.SetType(EPropertyType::INT)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
+
+	mInvFullResolution = scheme->AddProperty(ShaderProperty("InvFullResolution", "InvFullResolution", nullptr))
+		.SetType(EPropertyType::VEC2)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
+
+	mRadiusToScreen = scheme->AddProperty(ShaderProperty("RadiusToScreen", "RadiusToScreen", nullptr))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
+
+	mNegInvR2 = scheme->AddProperty(ShaderProperty("NegInvR2", "NegInvR2", nullptr))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
+	mNDotVBias = scheme->AddProperty(ShaderProperty("NDotVBias", "NDotVBias", nullptr))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
+
+	mAOMultiplier = scheme->AddProperty(ShaderProperty("AOMultiplier", "AOMultiplier", nullptr))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
+
+	mPowExponent = scheme->AddProperty(ShaderProperty("PowExponent", "PowExponent", nullptr))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
+
+	mOnlyAO = scheme->AddProperty(ShaderProperty("OnlyAO", "OnlyAO", nullptr))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
+}
+
+bool EffectShaderSSAO::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const
 {
 	FBCamera* camera = effectContext->GetCamera();
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
@@ -315,7 +304,7 @@ bool EffectShaderSSAO::OnCollectUI(PostEffectContextProxy* effectContext, int ma
 		bias = 1.0f;
 
 	const float aoMult = 1.0f / (1.0f - bias);
-
+	
 	ShaderPropertyWriter write(this, effectContext);
 
 	write(mOnlyAO, onlyAO)
@@ -330,16 +319,6 @@ bool EffectShaderSSAO::OnCollectUI(PostEffectContextProxy* effectContext, int ma
 			1.0f / float(effectContext->GetViewWidth()),
 			1.0f / float(effectContext->GetViewHeight()));
 
-	//mOnlyAO->SetValue(onlyAO);
-	//mProjInfo->SetValue(projInfo[0], projInfo[1], projInfo[2], projInfo[3]);
-	//mProjOrtho->SetValue(projOrtho);
-	//mRadiusToScreen->SetValue(RadiusToScreen);
-	//mNegInvR2->SetValue(negInvR2);
-	//mPowExponent->SetValue(intensity);
-	//mNDotVBias->SetValue(bias);
-	//mAOMultiplier->SetValue(aoMult);
-	//mInvFullResolution->SetValue(1.0f / float(effectContext->GetViewWidth()), 1.0f / float(effectContext->GetViewHeight()));
-	
 	return true;
 }
 

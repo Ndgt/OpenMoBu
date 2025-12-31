@@ -18,13 +18,17 @@ const uint32_t PostEffectShaderLinearDepth::SHADER_NAME_HASH = xxhash32(PostEffe
 
 PostEffectShaderLinearDepth::PostEffectShaderLinearDepth(FBComponent* uiComponent)
 	: PostEffectBufferShader(uiComponent)
+{}
+
+void PostEffectShaderLinearDepth::OnPopulateProperties(PropertyScheme* scheme)
 {
-	mClipInfo = &AddProperty(ShaderProperty("clipInfo", "gClipInfo"))
+	mClipInfo = scheme->AddProperty(ShaderProperty("clipInfo", "gClipInfo"))
 		.SetType(EPropertyType::VEC4)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
 }
 
-bool PostEffectShaderLinearDepth::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
+bool PostEffectShaderLinearDepth::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const
 {
 	const float znear = effectContext->GetCameraNearDistance();
 	const float zfar = effectContext->GetCameraFarDistance();	
@@ -40,7 +44,5 @@ bool PostEffectShaderLinearDepth::OnCollectUI(PostEffectContextProxy* effectCont
 
 	ShaderPropertyWriter writer(this, effectContext);
 	writer(mClipInfo, newClipInfo[0], newClipInfo[1], newClipInfo[2], newClipInfo[3]);
-
-	//mClipInfo->SetValue(newClipInfo[0], newClipInfo[1], newClipInfo[2], newClipInfo[3]);
 	return true;
 }

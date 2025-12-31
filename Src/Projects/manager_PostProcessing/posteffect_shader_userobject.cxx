@@ -333,22 +333,24 @@ void EffectShaderUserObject::DefaultValues()
 
 FBProperty* EffectShaderUserObject::MakePropertyInt(const UserBufferShader::ShaderProperty& prop)
 {
-	FBProperty* newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_int, ANIMATIONNODE_TYPE_INTEGER, false, false, nullptr);
+	constexpr const bool isUser{ false };
+	FBProperty* newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_int, ANIMATIONNODE_TYPE_INTEGER, false, isUser, nullptr);
 	PropertyAdd(newProp);
 	return newProp;
 }
 
 FBProperty* EffectShaderUserObject::MakePropertyFloat(const UserBufferShader::ShaderProperty& prop)
 {
+	constexpr const bool isUser{ false };
 	FBProperty* newProp = nullptr;
 
 	if (strstr(prop.GetUniformName(), "_flag") != nullptr)
 	{
-		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_bool, ANIMATIONNODE_TYPE_BOOL, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_bool, ANIMATIONNODE_TYPE_BOOL, true, isUser, nullptr);
 	}
 	else
 	{
-		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_double, ANIMATIONNODE_TYPE_NUMBER, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_double, ANIMATIONNODE_TYPE_NUMBER, true, isUser, nullptr);
 
 		if (strstr(prop.GetUniformName(), "_slider") != nullptr)
 		{
@@ -362,16 +364,17 @@ FBProperty* EffectShaderUserObject::MakePropertyFloat(const UserBufferShader::Sh
 
 FBProperty* EffectShaderUserObject::MakePropertyVec2(const UserBufferShader::ShaderProperty& prop)
 {
+	constexpr const bool isUser{ false };
 	FBProperty* newProp = nullptr;
 	
 	if (strstr(prop.GetUniformName(), "_wstoss") != nullptr)
 	{
 		// a property for world position that is going to be converted into screen space position
-		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_Vector3D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_Vector3D, ANIMATIONNODE_TYPE_VECTOR, true, isUser, nullptr);
 	}
 	else
 	{
-		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_Vector2D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_Vector2D, ANIMATIONNODE_TYPE_VECTOR, true, isUser, nullptr);
 	}
 	
 	PropertyAdd(newProp);
@@ -380,15 +383,16 @@ FBProperty* EffectShaderUserObject::MakePropertyVec2(const UserBufferShader::Sha
 
 FBProperty* EffectShaderUserObject::MakePropertyVec3(const UserBufferShader::ShaderProperty& prop)
 {
+	constexpr const bool isUser{ false };
 	FBProperty* newProp = nullptr;
 
 	if (strstr(prop.GetUniformName(), "_color") != nullptr)
 	{
-		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_ColorRGB, ANIMATIONNODE_TYPE_COLOR, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_ColorRGB, ANIMATIONNODE_TYPE_COLOR, true, isUser, nullptr);
 	}
 	else
 	{
-		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_Vector3D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_Vector3D, ANIMATIONNODE_TYPE_VECTOR, true, isUser, nullptr);
 	}
 
 	PropertyAdd(newProp);
@@ -397,15 +401,16 @@ FBProperty* EffectShaderUserObject::MakePropertyVec3(const UserBufferShader::Sha
 
 FBProperty* EffectShaderUserObject::MakePropertyVec4(const UserBufferShader::ShaderProperty& prop)
 {
+	constexpr const bool isUser{ false };
 	FBProperty* newProp = nullptr;
 
 	if (strstr(prop.GetUniformName(), "_color") != nullptr)
 	{
-		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_ColorRGBA, ANIMATIONNODE_TYPE_COLOR_RGBA, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_ColorRGBA, ANIMATIONNODE_TYPE_COLOR_RGBA, true, isUser, nullptr);
 	}
 	else
 	{
-		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_Vector4D, ANIMATIONNODE_TYPE_VECTOR_4, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_Vector4D, ANIMATIONNODE_TYPE_VECTOR_4, true, isUser, nullptr);
 	}
 
 	PropertyAdd(newProp);
@@ -414,7 +419,8 @@ FBProperty* EffectShaderUserObject::MakePropertyVec4(const UserBufferShader::Sha
 
 FBProperty* EffectShaderUserObject::MakePropertySampler(const UserBufferShader::ShaderProperty& prop)
 {
-	FBProperty* newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_object, ANIMATIONNODE_TYPE_OBJECT, false, false, nullptr);
+	constexpr const bool isUser{ false };
+	FBProperty* newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_object, ANIMATIONNODE_TYPE_OBJECT, false, isUser, nullptr);
 	if (FBPropertyListObject* listObjProp = FBCast<FBPropertyListObject>(newProp))
 	{
 		//listObjProp->SetFilter(FBTexture::GetInternalClassId() | EffectShaderUserObject::GetInternalClassId());
@@ -472,43 +478,35 @@ uint32_t UserBufferShader::SHADER_NAME_HASH = xxhash32(UserBufferShader::SHADER_
 UserBufferShader::UserBufferShader(EffectShaderUserObject* UserObject)
 	: PostEffectBufferShader(UserObject)
 	, mUserObject(UserObject)
-{
-}
+{}
 
 const char* UserBufferShader::GetName() const
 {
-	if (mUserObject)
-	{
-		return mUserObject->GetFullName();
-	}
-	return SHADER_NAME;
+	return (mUserObject) ? mUserObject->GetFullName() : SHADER_NAME;
 }
 
 uint32_t UserBufferShader::GetNameHash() const
 {
-	if (mUserObject)
-	{
-		return xxhash32(mUserObject->GetFullName());
-	}
-	return SHADER_NAME_HASH;
+	return (mUserObject) ? xxhash32(mUserObject->GetFullName()) : SHADER_NAME_HASH;
+}
+
+const char* UserBufferShader::GetUseMaskingPropertyName() const 
+{
+	return (mUserObject) ? mUserObject->UseMasking.GetName() : "Use Masking"; 
+}
+const char* UserBufferShader::GetMaskingChannelPropertyName() const 
+{ 
+	return (mUserObject) ? mUserObject->MaskingChannel.GetName() : "Masking Channel"; 
 }
 
 const char* UserBufferShader::GetVertexFname(const int variationIndex) const 
 { 
-	if (mUserObject)
-	{
-		return mUserObject->VertexFile.AsString();
-	}
-	return DEFAULT_VERTEX_SHADER_FILE; 
+	return (mUserObject) ? mUserObject->VertexFile.AsString() : DEFAULT_VERTEX_SHADER_FILE; 
 }
 //! get a filename of a fragment shader, for this effect, returns a relative filename
 const char* UserBufferShader::GetFragmentFname(const int variationIndex) const 
 { 
-	if (mUserObject)
-	{
-		return mUserObject->FragmentFile.AsString();
-	}
-	return DEFAULT_FRAGMENT_SHADER_FILE; 
+	return (mUserObject) ? mUserObject->FragmentFile.AsString() : DEFAULT_FRAGMENT_SHADER_FILE; 
 }
 
 /// new feature to have several passes for a specified effect
@@ -524,20 +522,6 @@ bool UserBufferShader::OnRenderPassBegin(const int pass, PostEffectRenderContext
 	return true;
 }
 
-void UserBufferShader::RemoveShaderProperties()
-{
-	for (auto& shaderProperty : mProperties)
-	{
-		if (shaderProperty.second.GetFBProperty() != nullptr)
-		{
-			mUserObject->PropertyRemove(shaderProperty.second.GetFBProperty());
-			shaderProperty.second.SetFBProperty(nullptr);
-		}
-	}
-
-	mProperties.clear();
-}
-
 bool UserBufferShader::OnPrepareUniforms(const int variationIndex)
 {
 	if (!GetShaderPtr())
@@ -546,13 +530,37 @@ bool UserBufferShader::OnPrepareUniforms(const int variationIndex)
 	return true;
 }
 
-void UserBufferShader::OnPropertyAdded(ShaderProperty& prop)
+void UserBufferShader::OnPropertySchemeRemoved(const PropertyScheme* scheme)
 {
-	prop.SetFBProperty(mUserObject->GetOrMakeProperty(prop));
+	for (const auto& prop : scheme->GetProperties())
+	{
+		if (prop.IsGeneratedByUniform())
+		{
+			if (FBProperty* fbProperty = mUserObject->PropertyList.Find(prop.GetName()))
+			{
+				mUserObject->PropertyRemove(fbProperty);
+			}
+		}
+	}
+}
+
+void UserBufferShader::OnPropertySchemeAdded(const PropertyScheme* scheme)
+{
+	for (const auto& prop : scheme->GetProperties())
+	{
+		if (prop.IsGeneratedByUniform())
+		{
+			mUserObject->GetOrMakeProperty(prop);
+		}
+	}
+}
+
+void UserBufferShader::OnPopulateProperties(PropertyScheme* scheme)
+{
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool UserBufferShader::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
+bool UserBufferShader::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const
 {
 	BindSystemUniforms(effectContext);
 	return true;

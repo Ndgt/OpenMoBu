@@ -44,20 +44,21 @@ private:
 
 private:
 
-	ShaderProperty* mTimer{ nullptr };
-	ShaderProperty* mGrainAmount{ nullptr }; //!< = 0.05; //grain amount
-	ShaderProperty* mColored{ nullptr }; //!< = false; //colored noise?
-	ShaderProperty* mColorAmount{ nullptr }; // = 0.6;
-	ShaderProperty* mGrainSize{ nullptr }; // = 1.6; //grain particle size (1.5 - 2.5)
-	ShaderProperty* mLumAmount{ nullptr }; // = 1.0; //
+	ShaderPropertyProxy mTimer;
+	ShaderPropertyProxy mGrainAmount; //!< = 0.05; //grain amount
+	ShaderPropertyProxy mColored; //!< = false; //colored noise?
+	ShaderPropertyProxy mColorAmount; // = 0.6;
+	ShaderPropertyProxy mGrainSize; // = 1.6; //grain particle size (1.5 - 2.5)
+	ShaderPropertyProxy mLumAmount; // = 1.0; //
 
+protected:
 	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
 	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
 
 	// this is a predefined effect shader, properties are defined manually
-	virtual bool DoPopulatePropertiesFromUniforms() const override {
-		return false;
-	}
+	virtual bool DoPopulatePropertiesFromUniforms() const override { return false; }
 
-	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
+	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
+
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 };

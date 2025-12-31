@@ -90,13 +90,10 @@ class UserBufferShader : public PostEffectBufferShader
 public:
 
 	UserBufferShader(EffectShaderUserObject* UserObject);
-	virtual ~UserBufferShader() {}
+	virtual ~UserBufferShader() = default;
 
 	/// number of variations of the same effect, but with a different algorithm (for instance, 3 ways of making a lens flare effect)
-	virtual int GetNumberOfVariations() const override
-	{
-		return 1;
-	}
+	virtual int GetNumberOfVariations() const override { return 1; }
 
 	//! an effect public name
 	virtual const char* GetName() const override;
@@ -122,23 +119,25 @@ protected:
 	static constexpr const char* DEFAULT_FRAGMENT_SHADER_FILE = "/GLSL/test.glslf";
 
 	//!< scene object, data container and interaction with the end user
-	EffectShaderUserObject* mUserObject;
+	EffectShaderUserObject* mUserObject{ nullptr };
 	
-	virtual const char* GetUseMaskingPropertyName() const override { return "Use Masking"; }
-	virtual const char* GetMaskingChannelPropertyName() const override { return "Masking Channel"; }
+	virtual const char* GetUseMaskingPropertyName() const override;
+	virtual const char* GetMaskingChannelPropertyName() const override;
 	//!< if true, once shader is loaded, let's inspect all the uniforms and make properties from them
 	virtual bool DoPopulatePropertiesFromUniforms() const override { return true; }
 
-	void	RemoveShaderProperties();
-	
 	//! prepare uniforms for a given variation of the effect
 	virtual bool OnPrepareUniforms(const int variationIndex) override;
 
+	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
+
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
+
+	virtual void OnPropertySchemeRemoved(const PropertyScheme* scheme) override;
 
 	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
-	virtual void OnPropertyAdded(ShaderProperty& property) override;
+	virtual void OnPropertySchemeAdded(const PropertyScheme* scheme) override;
 
 };
 

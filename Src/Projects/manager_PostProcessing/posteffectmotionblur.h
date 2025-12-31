@@ -48,17 +48,17 @@ protected:
 	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
 
 	// this is a predefined effect shader, properties are defined manually
-	virtual bool DoPopulatePropertiesFromUniforms() const override {
-		return false;
-	}
+	virtual bool DoPopulatePropertiesFromUniforms() const override { return false; }
 
-	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
+	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
+
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 
 private:
 	
-	ShaderProperty*		mDt;
+	ShaderPropertyProxy mDt;
 
 	FBMatrix			mLastModelViewProj;
 	
-	int					mLastLocalFrame{ -1 };
+	mutable int			mLastLocalFrame{ -1 };
 };

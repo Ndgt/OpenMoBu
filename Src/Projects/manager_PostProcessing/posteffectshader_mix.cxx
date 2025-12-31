@@ -31,40 +31,87 @@ uint32_t EffectShaderMix::SHADER_NAME_HASH = xxhash32(EffectShaderMix::SHADER_NA
 EffectShaderMix::EffectShaderMix(FBComponent* uiComponent)
 	: PostEffectBufferShader(uiComponent)
 	, mUIComponent(uiComponent)
+{}
+
+const char* EffectShaderMix::GetName() const
 {
-	if (FBIS(uiComponent, EffectShaderMixUserObject))
+	if (FBIS(mUIComponent, EffectShaderMixUserObject))
 	{
-		EffectShaderMixUserObject* userObject = FBCast<EffectShaderMixUserObject>(uiComponent);
+		EffectShaderMixUserObject* userObject = FBCast<EffectShaderMixUserObject>(mUIComponent);
+		return userObject->LongName;
+	}
+	return SHADER_NAME;
+}
+uint32_t EffectShaderMix::GetNameHash() const
+{
+	if (FBIS(mUIComponent, EffectShaderMixUserObject))
+	{
+		EffectShaderMixUserObject* userObject = FBCast<EffectShaderMixUserObject>(mUIComponent);
+		const char* longName = userObject->LongName;
+		return xxhash32(longName);
+	}
+	return SHADER_NAME_HASH;
+}
+
+const char* EffectShaderMix::GetUseMaskingPropertyName() const
+{
+	if (FBIS(mUIComponent, EffectShaderMixUserObject))
+	{
+		EffectShaderMixUserObject* userObject = FBCast<EffectShaderMixUserObject>(mUIComponent);
+		return userObject->UseMasking.GetName();
+	}
+	return nullptr;
+}
+const char* EffectShaderMix::GetMaskingChannelPropertyName() const
+{
+	if (FBIS(mUIComponent, EffectShaderMixUserObject))
+	{
+		EffectShaderMixUserObject* userObject = FBCast<EffectShaderMixUserObject>(mUIComponent);
+		return userObject->MaskingChannel.GetName();
+	}
+	return nullptr;
+}
+
+void EffectShaderMix::OnPopulateProperties(PropertyScheme* scheme)
+{
+	if (FBIS(mUIComponent, EffectShaderMixUserObject))
+	{
+		EffectShaderMixUserObject* userObject = FBCast<EffectShaderMixUserObject>(mUIComponent);
 
 		ShaderProperty texturePropertyA(EffectShaderMixUserObject::INPUT_TEXTURE_LABEL, "sampler0", EPropertyType::TEXTURE, &userObject->InputTexture);
-		mColorSamplerA = &AddProperty(std::move(texturePropertyA))
+		mColorSamplerA = scheme->AddProperty(std::move(texturePropertyA))
 			.SetDefaultValue(CommonEffect::ColorSamplerSlot)
-			.SetFlag(PropertyFlag::ShouldSkip, true);
+			.SetFlag(PropertyFlag::ShouldSkip, true)
+			.GetProxy();
 
 		ShaderProperty texturePropertyB(EffectShaderMixUserObject::INPUT_TEXTURE_2_LABEL, "sampler1", EPropertyType::TEXTURE, &userObject->SecondTexture);
-		mColorSamplerB = &AddProperty(std::move(texturePropertyB))
+		mColorSamplerB = scheme->AddProperty(std::move(texturePropertyB))
 			.SetDefaultValue(CommonEffect::UserSamplerSlot)
-			.SetFlag(PropertyFlag::ShouldSkip, true);
+			.SetFlag(PropertyFlag::ShouldSkip, true)
+			.GetProxy();
 	}
 	else
 	{
-		mColorSamplerA = &AddProperty(ShaderProperty("color0", "sampler0"))
+		mColorSamplerA = scheme->AddProperty(ShaderProperty("color0", "sampler0"))
 			.SetType(EPropertyType::TEXTURE)
 			.SetFlag(PropertyFlag::ShouldSkip, true)
-			.SetDefaultValue(CommonEffect::ColorSamplerSlot);
-		mColorSamplerB = &AddProperty(ShaderProperty("color1", "sampler1"))
+			.SetDefaultValue(CommonEffect::ColorSamplerSlot)
+			.GetProxy();
+		mColorSamplerB = scheme->AddProperty(ShaderProperty("color1", "sampler1"))
 			.SetType(EPropertyType::TEXTURE)
 			.SetFlag(PropertyFlag::ShouldSkip, true)
-			.SetDefaultValue(CommonEffect::UserSamplerSlot);
+			.SetDefaultValue(CommonEffect::UserSamplerSlot)
+			.GetProxy();
 	}
 
-	mBloom = &AddProperty(ShaderProperty("bloom", "gBloom"))
+	mBloom = scheme->AddProperty(ShaderProperty("bloom", "gBloom"))
 		.SetType(EPropertyType::VEC4)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.GetProxy();
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool EffectShaderMix::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
+bool EffectShaderMix::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const
 {
 	ShaderPropertyWriter writer(this, effectContext);
 

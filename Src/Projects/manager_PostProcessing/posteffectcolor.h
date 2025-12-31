@@ -74,9 +74,9 @@ private:
 
 protected:
 
-	ShaderProperty* mChromaticAberration{ nullptr };
-	ShaderProperty* mCSB{ nullptr };
-	ShaderProperty* mHue{ nullptr };
+	ShaderPropertyProxy mChromaticAberration;
+	ShaderPropertyProxy mCSB;
+	ShaderPropertyProxy mHue;
 	
 	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
 	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
@@ -84,5 +84,7 @@ protected:
 	// this is a predefined effect shader, properties are defined manually
 	bool DoPopulatePropertiesFromUniforms() const override { return false;  }
 
-	virtual bool OnCollectUI(PostEffectContextProxy* effectContextProxy, int maskIndex) override;
+	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
+
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContextProxy, int maskIndex) const override;
 };

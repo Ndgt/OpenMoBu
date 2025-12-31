@@ -24,4 +24,21 @@ find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})
 link_libraries(${GLEW_LIBRARIES})
 
+#
+# XXHASH
+
+#include_directories(${CMAKE_SOURCE_DIR}/third_party/xxhash)
+#link_libraries(${CMAKE_SOURCE_DIR}/third_party/xxhash)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE Version.lib fbsdk fbxsdk OpenGL::GL OpenGL::GLU GLEW::glew_s)
+
+
+add_library(xxhash_local STATIC
+  "${CMAKE_SOURCE_DIR}/third_party/xxhash/xxhash.c"
+)
+
+target_include_directories(xxhash_local PUBLIC
+  "${CMAKE_SOURCE_DIR}/third_party/xxhash"
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE xxhash_local)

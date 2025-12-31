@@ -45,6 +45,7 @@ public:
 		}
 	}
 
+	void OnRenderBegin(PostEffectRenderContext& renderContextParent, PostEffectContextProxy* effectContext) override;
 	bool OnRenderPassBegin(int passIndex, PostEffectRenderContext& renderContext) override;
 
 private:
@@ -62,25 +63,25 @@ protected:
 	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
 
 	// this is a predefined effect shader, properties are defined manually
-	virtual bool DoPopulatePropertiesFromUniforms() const override {
-		return false;
-	}
+	virtual bool DoPopulatePropertiesFromUniforms() const override { return false; }
 
-	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
+	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
+
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 
 private:
 
-	ShaderProperty* mFlareSeed{ nullptr };
-	ShaderProperty* mAmount{ nullptr };
-	ShaderProperty* mTime{ nullptr };
-	ShaderProperty* mLightPos{ nullptr }; // vec3 array
+	ShaderPropertyProxy mFlareSeed;
+	ShaderPropertyProxy mAmount;
+	ShaderPropertyProxy mTime;
+	ShaderPropertyProxy mLightPos; // vec3 array
 
-	ShaderProperty* mTint{ nullptr };
-	ShaderProperty* mInner{ nullptr };
-	ShaderProperty* mOuter{ nullptr };
-	ShaderProperty* mFadeToBorders{ nullptr };
-	ShaderProperty* mBorderWidth{ nullptr };
-	ShaderProperty* mFeather{ nullptr };
+	ShaderPropertyProxy mTint;
+	ShaderPropertyProxy mInner;
+	ShaderPropertyProxy mOuter;
+	ShaderPropertyProxy mFadeToBorders;
+	ShaderPropertyProxy mBorderWidth;
+	ShaderPropertyProxy mFeather;
 
 	struct SubShader
 	{
@@ -89,21 +90,21 @@ private:
 		SubShader() = default;
 		virtual ~SubShader() = default;
 
-		int				m_NumberOfPasses{ 1 };
 		float			m_DepthAttenuation{ 1.0f };
 
 		std::vector<FBVector3d>	m_LightPositions; // window xy and depth (for attenuation)
 		std::vector<FBColor>	m_LightColors;
 		std::vector<float>		m_LightAlpha;
 
-		void Init();
-		bool CollectUIValues(int shaderIndex, PostEffectContextProxy* effectContext, int maskIndex);
+		bool CollectUIValues(int shaderIndex, PostEffectContextProxy* effectContext, int numberOfPasses, int maskIndex);
 		
 	private:
-		void ProcessLightObjects(PostEffectContextProxy* effectContext, PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos);
+		void ProcessLightObjects(PostEffectContextProxy* effectContext, PostPersistentData* pData, FBCamera* pCamera, int numberOfPasses, int w, int h, double dt, FBTime systemTime, double* flarePos);
 		void ProcessSingleLight(PostEffectContextProxy* effectContext, PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos);
 	};
 
 	SubShader	subShaders[NUMBER_OF_SHADERS];
 	
+	mutable std::atomic<int> mNumberOfPasses{ 1 };
+
 };

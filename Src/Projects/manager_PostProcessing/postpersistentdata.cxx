@@ -1757,7 +1757,7 @@ bool PostPersistentData::IsNeedToReloadShaders(bool doPropagateToUserEffects)
 	return mReloadShaders; 
 }
 
-bool PostPersistentData::IsExternalReloadRequested()
+bool PostPersistentData::IsExternalReloadRequested() const
 {
 	return mReloadExternal;
 }

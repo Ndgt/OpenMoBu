@@ -166,8 +166,17 @@ void PostProcessContextData::ReloadShaders(PostPersistentData* data, PostEffectC
 
     fxContext->Evaluate(pEvaluateInfoIn, pCamera, contextParameters);
     fxContext->Synchronize();
+}
 
-    
+void PostProcessContextData::VideoRenderingBegin()
+{
+	VERIFY(!mVideoRendering);
+	mVideoRendering = true;
+}
+void PostProcessContextData::VideoRenderingEnd()
+{
+	VERIFY(mVideoRendering);
+	mVideoRendering = false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -186,8 +195,7 @@ void PostProcessContextData::RenderBeforeRender(bool processCompositions)
         {
             FBCamera *pCamera = renderer->GetCameraInPane(nPane);
             if (!pCamera 
-                || true == pCamera->SystemCamera
-                || mVideoRendering 
+                || true == pCamera->SystemCamera // || mVideoRendering 
                 || mSchematicView[nPane])
             {
                 mRenderPanes[nPane].camera = nullptr;
@@ -422,6 +430,7 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, FBTime 
 
         mLastSystemTime = systemTime.GetSecondDouble();
         mLastLocalTime = localTime.GetSecondDouble();
+		mIsTimeInitialized = true;
 
         CHECK_GL_ERROR();
     }
@@ -470,7 +479,10 @@ void PostProcessContextData::PreRenderFirstEntry()
     mViewerViewport[0] = mViewerViewport[1] = 0;
     mViewerViewport[2] = mViewerViewport[3] = 0;
 
-    mSchematicView[0] = mSchematicView[1] = mSchematicView[2] = mSchematicView[3] = false;
+    for (int i = 0; i < MAX_PANE_COUNT; ++i)
+    {
+        mSchematicView[i] = false;
+    }
 
     FBRenderer *pRenderer = system.Renderer;
     const int schematic = pRenderer->GetSchematicViewPaneIndex();

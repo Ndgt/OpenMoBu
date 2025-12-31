@@ -41,7 +41,7 @@ public:
 public:
 
 	// properties
-	ShaderProperty* mClipInfo;
+	ShaderPropertyProxy mClipInfo;
 
 protected:
 	static constexpr const char* SHADER_NAME = "LinearDepth";
@@ -53,10 +53,10 @@ protected:
 	const char* GetMaskingChannelPropertyName() const override { return nullptr; }
 
 	// this is a predefined effect shader, properties are defined manually
-	virtual bool DoPopulatePropertiesFromUniforms() const override {
-		return false;
-	}
+	virtual bool DoPopulatePropertiesFromUniforms() const override { return false; }
+
+	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 };

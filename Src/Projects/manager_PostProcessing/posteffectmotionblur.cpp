@@ -21,12 +21,7 @@ uint32_t EffectShaderMotionBlur::SHADER_NAME_HASH = xxhash32(EffectShaderMotionB
 
 EffectShaderMotionBlur::EffectShaderMotionBlur(FBComponent* ownerIn)
 	: PostEffectBufferShader(ownerIn)
-{
-	MakeCommonProperties();
-
-	mDt = &AddProperty(ShaderProperty("dt", "dt", EPropertyType::FLOAT))
-		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
-}
+{}
 
 const char* EffectShaderMotionBlur::GetUseMaskingPropertyName() const noexcept
 {
@@ -37,7 +32,14 @@ const char* EffectShaderMotionBlur::GetMaskingChannelPropertyName() const noexce
 	return PostPersistentData::MOTIONBLUR_MASKING_CHANNEL;
 }
 
-bool EffectShaderMotionBlur::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex)
+void EffectShaderMotionBlur::OnPopulateProperties(PropertyScheme* scheme)
+{
+	mDt = scheme->AddProperty(ShaderProperty("dt", "dt", EPropertyType::FLOAT))
+		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+		.GetProxy();
+}
+
+bool EffectShaderMotionBlur::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const
 {
 	if (!effectContext->GetCamera() || !effectContext->GetPostProcessData())
 		return false;
@@ -49,7 +51,6 @@ bool EffectShaderMotionBlur::OnCollectUI(PostEffectContextProxy* effectContext, 
 		ShaderPropertyWriter writer(this, effectContext);
 		writer(mDt, static_cast<float>(effectContext->GetLocalTimeDT()));
 
-		//mDt->SetValue();
 		mLastLocalFrame = effectContext->GetLocalFrame();
 	}
 
