@@ -81,13 +81,13 @@ void EffectShaderMix::OnPopulateProperties(PropertyScheme* scheme)
 		ShaderProperty texturePropertyA(EffectShaderMixUserObject::INPUT_TEXTURE_LABEL, "sampler0", EPropertyType::TEXTURE, &userObject->InputTexture);
 		mColorSamplerA = scheme->AddProperty(std::move(texturePropertyA))
 			.SetDefaultValue(CommonEffect::ColorSamplerSlot)
-			.SetFlag(PropertyFlag::ShouldSkip, true)
+			//.SetFlag(PropertyFlag::ShouldSkip, true)
 			.GetProxy();
 
 		ShaderProperty texturePropertyB(EffectShaderMixUserObject::INPUT_TEXTURE_2_LABEL, "sampler1", EPropertyType::TEXTURE, &userObject->SecondTexture);
 		mColorSamplerB = scheme->AddProperty(std::move(texturePropertyB))
 			.SetDefaultValue(CommonEffect::UserSamplerSlot)
-			.SetFlag(PropertyFlag::ShouldSkip, true)
+			//.SetFlag(PropertyFlag::ShouldSkip, true)
 			.GetProxy();
 	}
 	else

@@ -75,6 +75,15 @@ void EffectShaderUserObject::ActionOpenFolder(HIObject pObject, bool value)
 	}
 }
 
+void EffectShaderUserObject::ActionExportShaderScheme(HIObject pObject, bool value)
+{
+	EffectShaderUserObject* p = FBCast<EffectShaderUserObject>(pObject);
+	if (p && value)
+	{
+		p->DoExportShaderScheme();
+	}
+}
+
 PostEffectBufferShader* EffectShaderUserObject::MakeANewClassInstance()
 {
 	return new UserBufferShader(this);
@@ -102,6 +111,7 @@ bool EffectShaderUserObject::FBCreate()
 	FBPropertyPublish(this, FragmentFile, "Shader File", nullptr, nullptr);
 	FBPropertyPublish(this, ReloadShaders, "Reload Shader", nullptr, ActionReloadShaders);
 	FBPropertyPublish(this, OpenFolder, "Open Folder", nullptr, ActionOpenFolder);
+	FBPropertyPublish(this, ExportShaderScheme, "Export Shader Scheme", nullptr, ActionExportShaderScheme);
 
 	FBPropertyPublish(this, NumberOfPasses, "Number Of Passes", nullptr, nullptr);
 
@@ -324,6 +334,32 @@ bool EffectShaderUserObject::DoOpenFolderWithShader()
 		LOGE("[%s] Failed to open folder for %s\n", LongName.AsString(), fragment_abs_path_only);
 		return false;
 	}
+
+	return true;
+}
+
+bool EffectShaderUserObject::DoExportShaderScheme()
+{
+	const char* fragment_shader_rpath = FragmentFile;
+	if (!fragment_shader_rpath || strlen(fragment_shader_rpath) < 2)
+	{
+		LOGE("[%s] Shader File property is empty!\n", LongName.AsString());
+		return false;
+	}
+	char fragment_abs_path_only[MAX_PATH];
+	if (!FindEffectLocation(fragment_shader_rpath, fragment_abs_path_only, MAX_PATH))
+	{
+		LOGE("[%s] Failed to find shaders location for relative path %s!\n", LongName.AsString(), fragment_shader_rpath);
+		return false;
+	}
+
+	namespace fs = std::filesystem;
+	const fs::path base = fs::path(fragment_abs_path_only);
+	const fs::path name = fs::path(GetFullName());
+	fs::path full = fs::weakly_canonical(base / name);
+	full += ".json";
+
+	mUserShader->GetPropertySchemePtr()->ExportToJSON(full.string().c_str());
 
 	return true;
 }

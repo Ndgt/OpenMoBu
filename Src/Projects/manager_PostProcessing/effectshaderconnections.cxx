@@ -1,4 +1,3 @@
-
 /**	\file	effectshaderconnections.cxx
 
 Sergei <Neill3d> Solokhin 2018-2025
@@ -14,6 +13,10 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "mobu_logging.h"
 #include "posteffect_shader_userobject.h"
 #include "posteffectcontextmobu.h"
+#include <nlohmann/json.hpp>
+#include <magic_enum.hpp>
+
+#include <fstream>
 
 /////////////////////////////////////////////////////////////////////////
 // IEffectShaderConnections
@@ -96,14 +99,13 @@ EPropertyType IEffectShaderConnections::UniformTypeToShaderPropertyType(GLenum t
 
 IEffectShaderConnections::ShaderProperty::ShaderProperty(const IEffectShaderConnections::ShaderProperty& other)
 {
-	//strcpy_s(name, sizeof(char) * MAX_NAME_LENGTH, other.name);
-	//strcpy_s(uniformName, sizeof(char) * MAX_NAME_LENGTH, other.uniformName);
-	
 	SetNameHash(other.GetNameHash());
 	SetUniformNameHash(other.GetUniformNameHash());
 
+	SetFBComponent(other.GetFBComponent());
+	SetFBProperty(other.GetFBProperty());
+
 	flags = other.flags;
-	//fbProperty = other.fbProperty;
 	mDefaultValue = other.mDefaultValue;
 	indexInArray = other.indexInArray;
 	isGeneratedByUniform = other.isGeneratedByUniform;
@@ -118,7 +120,7 @@ IEffectShaderConnections::ShaderProperty::ShaderProperty(std::string_view nameIn
 	{
 		const auto propertyType = FBPropertyToShaderPropertyType(fbPropertyIn->GetPropertyType());
 		SetType(propertyType);
-		//fbProperty = fbPropertyIn;
+		SetFBProperty(fbPropertyIn);
 	}
 }
 
@@ -128,6 +130,11 @@ IEffectShaderConnections::ShaderProperty::ShaderProperty(std::string_view nameIn
 
 	SetName(nameIn);
 	SetUniformName(uniformNameIn);
+
+	if (fbPropertyIn)
+	{
+		SetFBProperty(fbPropertyIn);
+	}
 }
 
 uint32_t IEffectShaderConnections::ShaderProperty::ComputeNameHash(std::string_view s) const
@@ -137,7 +144,7 @@ uint32_t IEffectShaderConnections::ShaderProperty::ComputeNameHash(std::string_v
 
 void IEffectShaderConnections::ShaderProperty::SetName(std::string_view nameIN) 
 { 
-	nameHash = ComputeNameHash(nameIN.data());
+	nameHash = ComputeNameHash(nameIN);
 	mDefaultValue.SetNameHash(nameHash);
 }
 
@@ -418,6 +425,7 @@ IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::PropertySche
 {
 	const uint32_t nameHash = property.GetNameHash();
 	VERIFY(nameHash != 0);
+	VERIFY(!FindPropertyByHash(nameHash));
 
 	auto& newProp = properties.emplace_back(property);
 	newProp.SetIndexInArray(static_cast<int>(properties.size()) - 1);
@@ -428,6 +436,7 @@ IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::PropertySche
 {
 	const uint32_t nameHash = property.GetNameHash();
 	VERIFY(nameHash != 0);
+	VERIFY(!FindPropertyByHash(nameHash));
 
 	auto& newProp = properties.emplace_back(std::move(property));
 	newProp.SetIndexInArray(static_cast<int>(properties.size()) - 1);
@@ -514,10 +523,92 @@ void IEffectShaderConnections::PropertyScheme::AssociateFBProperties(FBComponent
 {
 	for (auto& prop : properties)
 	{
-		if (FBProperty* fbProp = component->PropertyList.Find(prop.GetName()))
+		FBProperty* fbProp = component->PropertyList.Find(prop.GetName());
+		VERIFY_MSG(fbProp || !prop.IsGeneratedByUniform(), "%s\n", prop.GetName());
+		if (fbProp)
 		{
 			prop.SetFBProperty(fbProp);
 			prop.SetFBComponent(component);
 		}
 	}
+}
+
+bool IEffectShaderConnections::PropertyScheme::ExportToJSON(const char* fileName) const
+{
+	// for convenience
+	using json = nlohmann::json;
+	
+	json root = json::object();
+	root["properties"] = json::array();
+
+	for (const auto& prop : properties)
+	{
+		json item = json::object();
+
+		// Basic identifiers
+		item["name"] = prop.GetName();
+		item["nameHash"] = prop.GetNameHash();
+		item["uniformName"] = prop.GetUniformName();
+		item["uniformHash"] = prop.GetUniformNameHash();
+
+		// flags
+		json flagsItem = json::array();
+		for (auto e : magic_enum::enum_values<PropertyFlag>()) {
+			if (prop.HasFlag(e))
+			{
+				flagsItem.push_back(magic_enum::enum_name(e));
+			}
+		}
+		item["flags"] = std::move(flagsItem);
+
+		// Default float data (4 floats)
+		json valueItem = json::object();
+
+		const float* df = prop.GetDefaultFloatData();
+		json defArr = json::array();
+		for (int i = 0; i < 4; ++i)
+		{
+			float v = (df != nullptr) ? df[i] : 0.0f;
+			defArr.push_back(v);
+		}
+		valueItem["type"] = magic_enum::enum_name(prop.GetDefaultValue().GetType()).data();
+		valueItem["isLocationRequired"] = prop.GetDefaultValue().IsRequired();
+		valueItem["location"] = prop.GetDefaultValue().GetLocation();
+		valueItem["nameHash"] = prop.GetDefaultValue().GetNameHash();
+		valueItem["defaultFloat"] = std::move(defArr);
+
+		item["defaultValue"] = std::move(valueItem);
+
+		// Scale
+		item["scale"] = prop.GetScale();
+
+		item["index"] = prop.GetIndexInArray();
+
+		item["isGeneratedByUniform"] = prop.IsGeneratedByUniform();
+
+		item["fbComponent"] = prop.GetFBComponent() ? prop.GetFBComponent()->GetFullName() : "Empty";
+		item["fbProperty"] = prop.GetFBProperty() ? prop.GetFBProperty()->GetName() : "Empty";
+		item["fbPropertyType"] = prop.GetFBProperty() ? prop.GetFBProperty()->GetPropertyTypeName() : "Empty";
+		
+		root["properties"].push_back(std::move(item));
+	}
+
+	// Serialize and write to file
+	std::string out;
+	try
+	{
+		out = root.dump(4);
+	}
+	catch (...)
+	{
+		return false;
+	}
+
+	std::ofstream ofs(fileName, std::ios::out | std::ios::trunc);
+	if (!ofs.is_open())
+		return false;
+
+	ofs << out;
+	ofs.close();
+	return true;
 }

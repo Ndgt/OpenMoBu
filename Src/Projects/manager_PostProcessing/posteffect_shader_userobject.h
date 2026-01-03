@@ -183,6 +183,7 @@ public: // PROPERTIES
 
 	FBPropertyAction			ReloadShaders;
 	FBPropertyAction			OpenFolder; // open a folder where the shader file is located (if found)
+	FBPropertyAction			ExportShaderScheme;
 	FBPropertyBool				GenerateMipMaps;
 	FBPropertyAction			ResetToDefault;
 
@@ -196,6 +197,7 @@ public:
 	bool RequestShadersReload();
 	bool DoReloadShaders(ShaderPropertyStorage::EffectMap* effectPropertiesMap);
 	bool DoOpenFolderWithShader();
+	bool DoExportShaderScheme();
 
 	// calculate absolute paths for vertex and fragment shaders
 	// return false in case a given effect file is not found under the expected location
@@ -240,5 +242,5 @@ protected:
 
 	static void ActionReloadShaders(HIObject pObject, bool value);
 	static void ActionOpenFolder(HIObject pObject, bool value);
-
+	static void ActionExportShaderScheme(HIObject pObject, bool value);
 };

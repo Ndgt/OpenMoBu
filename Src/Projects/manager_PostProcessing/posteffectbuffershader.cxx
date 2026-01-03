@@ -534,7 +534,10 @@ void PostEffectBufferShader::PreRender(PostEffectRenderContext& renderContext, P
 		{
 			// DONE: write value to the associated shader property
 			GLint userTextureSlot = renderContext.userTextureSlot;
+			
+			// TODO: this value is probably not used!
 			propValue->SetValue(userTextureSlot);
+			renderContext.OverrideUniform(GetPropertySchemePtr(), { -1, propValue->GetNameHash() }, static_cast<float>(userTextureSlot));
 
 			glActiveTexture(GL_TEXTURE0 + userTextureSlot);
 			glBindTexture(GL_TEXTURE_2D, textureId);
@@ -590,8 +593,10 @@ void PostEffectBufferShader::PreRender(PostEffectRenderContext& renderContext, P
 
 		// DONE: write value to the associated shader property
 		GLint userTextureSlot = renderContext.userTextureSlot;
+		
+		// TODO: this value is probably not used!
 		propValue->SetValue(userTextureSlot);
-
+		renderContext.OverrideUniform(GetPropertySchemePtr(), { -1, propValue->GetNameHash() }, static_cast<float>(userTextureSlot));
 		// bind input buffers
 		glActiveTexture(GL_TEXTURE0 + userTextureSlot);
 		glBindTexture(GL_TEXTURE_2D, bufferTextureId);
@@ -622,12 +627,12 @@ void PostEffectBufferShader::Render(PostEffectRenderContext& renderContext, Post
 		OnPopulateProperties(newPropertyScheme.get());
 		InitializeUniforms(newPropertyScheme.get(), GetCurrentShader());
 
+		OnPropertySchemeAdded(newPropertyScheme.get());
 		FBComponent* effectComponent = GetOwner() ? GetOwner() : effectContext->GetPostProcessData();
 		newPropertyScheme->AssociateFBProperties(effectComponent);
 
 		mRenderPropertyScheme.reset(newPropertyScheme.release());
 		bIsNeedToUpdatePropertyScheme = false;
-		OnPropertySchemeAdded(mRenderPropertyScheme.get());
 	}
 	
 	PreRender(renderContext, effectContext);
@@ -837,6 +842,7 @@ int PostEffectBufferShader::ReflectUniforms(PropertyScheme* scheme) const
 			if (DoPopulatePropertiesFromUniforms())
 			{
 				ShaderProperty newProp;
+				
 				newProp.SetGeneratedByUniform(true);
 				newProp.SetUniformName(uniformName);
 				newProp.SetLocation(location);

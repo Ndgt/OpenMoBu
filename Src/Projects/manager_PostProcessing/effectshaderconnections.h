@@ -223,7 +223,10 @@ public:
 			return systemUniformLocations[static_cast<uint32_t>(u)];
 		}
 
+		// @see PostEffectBufferShader::Render
 		void AssociateFBProperties(FBComponent* component);
+
+		bool ExportToJSON(const char* fileName) const;
 
 	private:
 		std::vector<ShaderProperty> properties;
