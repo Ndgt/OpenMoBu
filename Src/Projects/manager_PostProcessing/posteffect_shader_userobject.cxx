@@ -568,13 +568,15 @@ bool UserBufferShader::OnPrepareUniforms(const int variationIndex)
 
 void UserBufferShader::OnPropertySchemeRemoved(const PropertyScheme* scheme)
 {
+	mPropertiesToRemove.clear();
+
 	for (const auto& prop : scheme->GetProperties())
 	{
 		if (prop.IsGeneratedByUniform())
 		{
 			if (FBProperty* fbProperty = mUserObject->PropertyList.Find(prop.GetName()))
 			{
-				mUserObject->PropertyRemove(fbProperty);
+				mPropertiesToRemove.emplace(prop.GetNameHash(), fbProperty);
 			}
 		}
 	}
@@ -586,9 +588,21 @@ void UserBufferShader::OnPropertySchemeAdded(const PropertyScheme* scheme)
 	{
 		if (prop.IsGeneratedByUniform())
 		{
+			auto iter = mPropertiesToRemove.find(prop.GetNameHash());
+			if (iter != mPropertiesToRemove.end())
+			{
+				mPropertiesToRemove.erase(iter);
+			}
+			//
 			mUserObject->GetOrMakeProperty(prop);
 		}
 	}
+
+	for (auto& pair : mPropertiesToRemove)
+	{
+		mUserObject->PropertyRemove(pair.second);
+	}
+	mPropertiesToRemove.clear();
 }
 
 void UserBufferShader::OnPopulateProperties(PropertyScheme* scheme)

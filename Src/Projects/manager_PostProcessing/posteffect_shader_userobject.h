@@ -139,6 +139,9 @@ protected:
 	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
 	virtual void OnPropertySchemeAdded(const PropertyScheme* scheme) override;
 
+private:
+
+	std::unordered_map<uint32_t, FBProperty*> mPropertiesToRemove;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
