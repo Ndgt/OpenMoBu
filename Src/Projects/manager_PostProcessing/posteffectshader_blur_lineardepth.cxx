@@ -26,29 +26,29 @@ void EffectShaderBlurLinearDepth::OnPopulateProperties(PropertyScheme* scheme)
 {
 	mColorTexture = scheme->AddProperty(ShaderProperty("color", "sampler0"))
 		.SetType(EPropertyType::TEXTURE)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP, true)
 		.SetDefaultValue(CommonEffect::ColorSamplerSlot)
 		.GetProxy();
 
 	mLinearDepthTexture = scheme->AddProperty(ShaderProperty("linearDepth", "linearDepthSampler"))
 		.SetType(EPropertyType::TEXTURE)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP, true)
 		.SetDefaultValue(CommonEffect::LinearDepthSamplerSlot)
 		.GetProxy();
 
 	mBlurSharpness = scheme->AddProperty(ShaderProperty("blurSharpness", "g_Sharpness"))
 		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP, true)
 		.GetProxy();
 
 	mColorShift = scheme->AddProperty(ShaderProperty("colorShift", "g_ColorShift"))
 		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP, true)
 		.GetProxy();
 
 	mInvRes = scheme->AddProperty(ShaderProperty("invRes", "g_InvResolutionDirection"))
 		.SetType(EPropertyType::VEC2)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP, true)
 		.GetProxy();
 }
 

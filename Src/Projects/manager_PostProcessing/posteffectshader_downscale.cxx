@@ -29,7 +29,7 @@ void PostEffectShaderDownscale::OnPopulateProperties(PropertyScheme* scheme)
 
 	mTexelSize = scheme->AddProperty(ShaderProperty("texelSize", "texelSize"))
 		.SetType(EPropertyType::VEC2)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP, true)
 		.GetProxy();
 }
 

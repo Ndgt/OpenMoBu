@@ -36,22 +36,22 @@ const char* EffectShaderFishEye::GetMaskingChannelPropertyName() const noexcept
 
 void EffectShaderFishEye::OnPopulateProperties(PropertyScheme* scheme)
 {
-	scheme->AddProperty(ShaderProperty("color", "sampler0"))
+	scheme->AddProperty("color", "sampler0")
 		.SetType(EPropertyType::TEXTURE)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 
-	mAmount = scheme->AddProperty(ShaderProperty(PostPersistentData::FISHEYE_AMOUNT, "amount", nullptr))
+	mAmount = scheme->AddProperty(PostPersistentData::FISHEYE_AMOUNT, "amount")
 		.SetScale(0.01f)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mLensRadius = scheme->AddProperty(ShaderProperty(PostPersistentData::FISHEYE_LENS_RADIUS, "lensradius", nullptr))
+	mLensRadius = scheme->AddProperty(PostPersistentData::FISHEYE_LENS_RADIUS, "lensradius")
 		.SetScale(1.0f)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mSignCurvature = scheme->AddProperty(ShaderProperty(PostPersistentData::FISHEYE_SIGN_CURV, "signcurvature", nullptr))
+	mSignCurvature = scheme->AddProperty(PostPersistentData::FISHEYE_SIGN_CURV, "signcurvature")
 		.SetScale(1.0f)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 }
 

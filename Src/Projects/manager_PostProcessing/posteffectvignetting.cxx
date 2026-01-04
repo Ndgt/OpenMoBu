@@ -32,25 +32,25 @@ const char* EffectShaderVignetting::GetMaskingChannelPropertyName() const noexce
 
 void EffectShaderVignetting::OnPopulateProperties(PropertyScheme* scheme)
 {
-	scheme->AddProperty(ShaderProperty("color", "colorSampler"))
+	scheme->AddProperty("color", "colorSampler")
 		.SetType(EPropertyType::TEXTURE)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
-
-	mAmount = scheme->AddProperty(ShaderProperty(PostPersistentData::VIGN_AMOUNT, "amount", nullptr))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	 
+	mAmount = scheme->AddProperty(PostPersistentData::VIGN_AMOUNT, "amount")
+		.SetFlag(PropertyFlag::SKIP)
 		.SetScale(0.01f)
 		.GetProxy();
-	VignOut = scheme->AddProperty(ShaderProperty(PostPersistentData::VIGN_OUT, "vignout", nullptr))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	VignOut = scheme->AddProperty(PostPersistentData::VIGN_OUT, "vignout")
+		.SetFlag(PropertyFlag::SKIP)
 		.SetScale(0.01f)
 		.GetProxy();
-	VignIn = scheme->AddProperty(ShaderProperty(PostPersistentData::VIGN_IN, "vignin", nullptr))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	VignIn = scheme->AddProperty(PostPersistentData::VIGN_IN, "vignin")
+		.SetFlag(PropertyFlag::SKIP)
 		.SetScale(0.01f)
 		.GetProxy();
-	VignFade = scheme->AddProperty(ShaderProperty(PostPersistentData::VIGN_FADE, "vignfade", nullptr))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	VignFade = scheme->AddProperty(PostPersistentData::VIGN_FADE, "vignfade")
+		.SetFlag(PropertyFlag::SKIP)
 		.SetScale(-0.1f)
 		.GetProxy();
 }

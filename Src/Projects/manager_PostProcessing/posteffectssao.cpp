@@ -183,57 +183,57 @@ void EffectShaderSSAO::DeleteTextures()
 
 void EffectShaderSSAO::OnPopulateProperties(PropertyScheme* scheme)
 {
-	scheme->AddProperty(ShaderProperty("color", "colorSampler"))
+	scheme->AddProperty("color", "colorSampler")
 		.SetType(EPropertyType::TEXTURE)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 
-	scheme->AddProperty(ShaderProperty("random", "texRandom"))
+	scheme->AddProperty("random", "texRandom")
 		.SetType(EPropertyType::TEXTURE)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.SetDefaultValue(CommonEffect::UserSamplerSlot);
 
-	mProjInfo = scheme->AddProperty(ShaderProperty("projInfo", "projInfo", nullptr))
+	mProjInfo = scheme->AddProperty("projInfo", "projInfo")
 		.SetType(EPropertyType::VEC4)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mProjOrtho = scheme->AddProperty(ShaderProperty("projOrtho", "projOrtho", nullptr))
+	mProjOrtho = scheme->AddProperty("projOrtho", "projOrtho")
 		.SetType(EPropertyType::INT)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mInvFullResolution = scheme->AddProperty(ShaderProperty("InvFullResolution", "InvFullResolution", nullptr))
+	mInvFullResolution = scheme->AddProperty("InvFullResolution", "InvFullResolution")
 		.SetType(EPropertyType::VEC2)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mRadiusToScreen = scheme->AddProperty(ShaderProperty("RadiusToScreen", "RadiusToScreen", nullptr))
+	mRadiusToScreen = scheme->AddProperty("RadiusToScreen", "RadiusToScreen")
 		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mNegInvR2 = scheme->AddProperty(ShaderProperty("NegInvR2", "NegInvR2", nullptr))
+	mNegInvR2 = scheme->AddProperty("NegInvR2", "NegInvR2")
 		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mNDotVBias = scheme->AddProperty(ShaderProperty("NDotVBias", "NDotVBias", nullptr))
+	mNDotVBias = scheme->AddProperty("NDotVBias", "NDotVBias")
 		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
-		.GetProxy();
-
-	mAOMultiplier = scheme->AddProperty(ShaderProperty("AOMultiplier", "AOMultiplier", nullptr))
-		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mPowExponent = scheme->AddProperty(ShaderProperty("PowExponent", "PowExponent", nullptr))
+	mAOMultiplier = scheme->AddProperty("AOMultiplier", "AOMultiplier")
 		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mOnlyAO = scheme->AddProperty(ShaderProperty("OnlyAO", "OnlyAO", nullptr))
+	mPowExponent = scheme->AddProperty("PowExponent", "PowExponent")
 		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
+		.GetProxy();
+
+	mOnlyAO = scheme->AddProperty("OnlyAO", "OnlyAO")
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 }
 

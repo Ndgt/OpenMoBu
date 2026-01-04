@@ -24,7 +24,7 @@ void PostEffectShaderLinearDepth::OnPopulateProperties(PropertyScheme* scheme)
 {
 	mClipInfo = scheme->AddProperty(ShaderProperty("clipInfo", "gClipInfo"))
 		.SetType(EPropertyType::VEC4)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP, true)
 		.GetProxy();
 }
 

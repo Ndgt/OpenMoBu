@@ -443,6 +443,30 @@ IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::PropertySche
 	return newProp;
 }
 
+IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::PropertyScheme::AddProperty(std::string_view nameIn, std::string_view uniformNameIn, FBProperty* fbPropertyIn)
+{
+	ShaderProperty property(nameIn, uniformNameIn, fbPropertyIn);
+	const uint32_t nameHash = property.GetNameHash();
+	VERIFY(nameHash != 0);
+	VERIFY(!FindPropertyByHash(nameHash));
+
+	auto& newProp = properties.emplace_back(std::move(property));
+	newProp.SetIndexInArray(static_cast<int>(properties.size()) - 1);
+	return newProp;
+}
+
+IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::PropertyScheme::AddProperty(std::string_view nameIn, std::string_view uniformNameIn, EPropertyType typeIn, FBProperty* fbPropertyIn)
+{
+	ShaderProperty property(nameIn, uniformNameIn, typeIn, fbPropertyIn);
+	const uint32_t nameHash = property.GetNameHash();
+	VERIFY(nameHash != 0);
+	VERIFY(!FindPropertyByHash(nameHash));
+
+	auto& newProp = properties.emplace_back(std::move(property));
+	newProp.SetIndexInArray(static_cast<int>(properties.size()) - 1);
+	return newProp;
+}
+
 IEffectShaderConnections::ShaderProperty* IEffectShaderConnections::PropertyScheme::FindPropertyByHash(uint32_t nameHash)
 {
 	auto iter = std::find_if(begin(properties), end(properties), [nameHash](ShaderProperty& prop) {

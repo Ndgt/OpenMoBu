@@ -38,111 +38,108 @@ void EffectShaderDOF::OnPopulateProperties(PropertyScheme* scheme)
 {
 	// Sample slots
 
-	scheme->AddProperty(ShaderProperty("color", "colorSampler"))
+	scheme->AddProperty("color", "colorSampler")
 		.SetType(EPropertyType::TEXTURE)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 
 	// Core depth of field parameters
-	mFocalDistance = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_FOCAL_DISTANCE, "focalDistance", EPropertyType::FLOAT))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	mFocalDistance = scheme->AddProperty(PostPersistentData::DOF_FOCAL_DISTANCE, "focalDistance", EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mFocalRange = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_FOCAL_RANGE, "focalRange", EPropertyType::FLOAT))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	mFocalRange = scheme->AddProperty(PostPersistentData::DOF_FOCAL_RANGE, "focalRange", EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mFStop = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_FSTOP, "fstop", EPropertyType::FLOAT))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	mFStop = scheme->AddProperty(PostPersistentData::DOF_FSTOP, "fstop", EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mCoC = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_COC, "CoC", EPropertyType::FLOAT))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	mCoC = scheme->AddProperty(PostPersistentData::DOF_COC, "CoC", EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
 	// Rendering parameters
 
-	mSamples = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_SAMPLES, "samples", EPropertyType::INT))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	mSamples = scheme->AddProperty(PostPersistentData::DOF_SAMPLES, "samples", EPropertyType::INT)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mRings = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_RINGS, "rings", EPropertyType::INT))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	mRings = scheme->AddProperty(PostPersistentData::DOF_RINGS, "rings", EPropertyType::INT)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
 	// Focus control
-	mAutoFocus = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_AUTO_FOCUS, "autoFocus", EPropertyType::BOOL))
+	mAutoFocus = scheme->AddProperty(PostPersistentData::DOF_AUTO_FOCUS, "autoFocus", EPropertyType::BOOL)
 		.SetRequired(false)
 		.GetProxy();
 
-	mFocus = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_USE_FOCUS_POINT, "focus", EPropertyType::BOOL))
+	mFocus = scheme->AddProperty(PostPersistentData::DOF_USE_FOCUS_POINT, "focus", EPropertyType::BOOL)
 		.SetRequired(false)
 		.GetProxy();
 
-	mFocusPoint = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_FOCUS_POINT, "focusPoint", EPropertyType::VEC4))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	mFocusPoint = scheme->AddProperty(PostPersistentData::DOF_FOCUS_POINT, "focusPoint", EPropertyType::VEC4)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mManualDOF = scheme->AddProperty(ShaderProperty("manualdof", "manualdof",
-		EPropertyType::BOOL))
-		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually;
+	mManualDOF = scheme->AddProperty("manualdof", "manualdof", EPropertyType::BOOL)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 	// Near and far DOF blur parameters
-	mNDOFStart = scheme->AddProperty(ShaderProperty("ndofstart", "ndofstart",
-		EPropertyType::FLOAT))
-		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually;
+	mNDOFStart = scheme->AddProperty("ndofstart", "ndofstart", EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mNDOFDist = scheme->AddProperty(ShaderProperty("ndofdist", "ndofdist",
-		EPropertyType::FLOAT))
-		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually;
+	mNDOFDist = scheme->AddProperty("ndofdist", "ndofdist", EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mFDOFStart = scheme->AddProperty(ShaderProperty("fdofstart", "fdofstart",
-		EPropertyType::FLOAT))
-		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually;
+	mFDOFStart = scheme->AddProperty("fdofstart", "fdofstart", EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mFDOFDist = scheme->AddProperty(ShaderProperty("fdofdist", "fdofdist", EPropertyType::FLOAT)).GetProxy();
+	mFDOFDist = scheme->AddProperty("fdofdist", "fdofdist", EPropertyType::FLOAT)
+		.GetProxy();
 
 	// Visual enhancement parameters
-	mBlurForeground = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_BLUR_FOREGROUND, "blurForeground", EPropertyType::BOOL))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	mBlurForeground = scheme->AddProperty(PostPersistentData::DOF_BLUR_FOREGROUND, "blurForeground", EPropertyType::BOOL)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mThreshold = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_THRESHOLD, "threshold", EPropertyType::FLOAT))
+	mThreshold = scheme->AddProperty(PostPersistentData::DOF_THRESHOLD, "threshold", EPropertyType::FLOAT)
 		.SetScale(0.01f)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mGain = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_GAIN, "gain", EPropertyType::FLOAT))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	mGain = scheme->AddProperty(PostPersistentData::DOF_GAIN, "gain", EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mBias = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_BIAS, "bias", EPropertyType::FLOAT))
+	mBias = scheme->AddProperty(PostPersistentData::DOF_BIAS, "bias", EPropertyType::FLOAT)
 		.SetScale(0.01f)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mFringe = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_FRINGE, "fringe", EPropertyType::FLOAT))
+	mFringe = scheme->AddProperty(PostPersistentData::DOF_FRINGE, "fringe", EPropertyType::FLOAT)
 		.SetScale(0.01f)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mNoise = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_NOISE, "noise", EPropertyType::BOOL))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	mNoise = scheme->AddProperty(PostPersistentData::DOF_NOISE, "noise", EPropertyType::BOOL)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
 	// Experimental bokeh shape parameters
-	mPentagon = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_PENTAGON, "pentagon", EPropertyType::BOOL))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	mPentagon = scheme->AddProperty(PostPersistentData::DOF_PENTAGON, "pentagon", EPropertyType::BOOL)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mFeather = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_PENTAGON_FEATHER, "feather", EPropertyType::FLOAT))
+	mFeather = scheme->AddProperty(PostPersistentData::DOF_PENTAGON_FEATHER, "feather", EPropertyType::FLOAT)
 		.SetScale(0.01f)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
 	// Debug utilities
-	mDebugBlurValue = scheme->AddProperty(ShaderProperty(PostPersistentData::DOF_DEBUG_BLUR_VALUE, "debugBlurValue", EPropertyType::BOOL))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	mDebugBlurValue = scheme->AddProperty(PostPersistentData::DOF_DEBUG_BLUR_VALUE, "debugBlurValue", EPropertyType::BOOL)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 }
 

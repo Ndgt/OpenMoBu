@@ -126,14 +126,12 @@ protected:
 	//!< if true, once shader is loaded, let's inspect all the uniforms and make properties from them
 	virtual bool DoPopulatePropertiesFromUniforms() const override { return true; }
 
-	//! prepare uniforms for a given variation of the effect
-	virtual bool OnPrepareUniforms(const int variationIndex) override;
-
 	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 
+	// a previous property scheme is going to be removed
 	virtual void OnPropertySchemeRemoved(const PropertyScheme* scheme) override;
 
 	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it

@@ -94,19 +94,19 @@ void EffectShaderMix::OnPopulateProperties(PropertyScheme* scheme)
 	{
 		mColorSamplerA = scheme->AddProperty(ShaderProperty("color0", "sampler0"))
 			.SetType(EPropertyType::TEXTURE)
-			.SetFlag(PropertyFlag::ShouldSkip, true)
+			.SetFlag(PropertyFlag::SKIP, true)
 			.SetDefaultValue(CommonEffect::ColorSamplerSlot)
 			.GetProxy();
 		mColorSamplerB = scheme->AddProperty(ShaderProperty("color1", "sampler1"))
 			.SetType(EPropertyType::TEXTURE)
-			.SetFlag(PropertyFlag::ShouldSkip, true)
+			.SetFlag(PropertyFlag::SKIP, true)
 			.SetDefaultValue(CommonEffect::UserSamplerSlot)
 			.GetProxy();
 	}
 
 	mBloom = scheme->AddProperty(ShaderProperty("bloom", "gBloom"))
 		.SetType(EPropertyType::VEC4)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP, true)
 		.GetProxy();
 }
 

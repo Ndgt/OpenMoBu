@@ -36,32 +36,32 @@ const char* EffectShaderFilmGrain::GetMaskingChannelPropertyName() const noexcep
 
 void EffectShaderFilmGrain::OnPopulateProperties(PropertyScheme* scheme)
 {
-	scheme->AddProperty(ShaderProperty("color", "sampler0"))
+	scheme->AddProperty("color", "sampler0")
 		.SetType(EPropertyType::TEXTURE)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 
-	mTimer = scheme->AddProperty(ShaderProperty("time", "timer", EPropertyType::FLOAT))
-		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+	mTimer = scheme->AddProperty("time", "timer", EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mGrainAmount = scheme->AddProperty(ShaderProperty(PostPersistentData::GRAIN_AMOUNT, "grainamount", nullptr))
+	mGrainAmount = scheme->AddProperty(PostPersistentData::GRAIN_AMOUNT, "grainamount")
 		.SetScale(0.01f)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mColored = scheme->AddProperty(ShaderProperty(PostPersistentData::GRAIN_COLORED, "colored", nullptr))
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+	mColored = scheme->AddProperty(PostPersistentData::GRAIN_COLORED, "colored")
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mColorAmount = scheme->AddProperty(ShaderProperty(PostPersistentData::GRAIN_COLOR_AMOUNT, "coloramount", nullptr))
+	mColorAmount = scheme->AddProperty(PostPersistentData::GRAIN_COLOR_AMOUNT, "coloramount")
 		.SetScale(0.01f)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mGrainSize = scheme->AddProperty(ShaderProperty(PostPersistentData::GRAIN_SIZE, "grainsize", nullptr))
+	mGrainSize = scheme->AddProperty(PostPersistentData::GRAIN_SIZE, "grainsize")
 		.SetScale(0.01f)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mLumAmount = scheme->AddProperty(ShaderProperty(PostPersistentData::GRAIN_LUMAMOUNT, "lumamount", nullptr))
+	mLumAmount = scheme->AddProperty(PostPersistentData::GRAIN_LUMAMOUNT, "lumamount")
 		.SetScale(0.01f)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 }
 

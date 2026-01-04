@@ -33,45 +33,45 @@ const char* EffectShaderLensFlare::GetMaskingChannelPropertyName() const noexcep
 
 void EffectShaderLensFlare::OnPopulateProperties(PropertyScheme* scheme)
 {
-	scheme->AddProperty(ShaderProperty("color", "sampler0"))
+	scheme->AddProperty("color", "sampler0")
 		.SetType(EPropertyType::TEXTURE)
 		.SetDefaultValue(CommonEffect::ColorSamplerSlot)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
+		.SetFlag(PropertyFlag::SKIP);
 
-	mFlareSeed = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_SEED, "flareSeed", nullptr))
+	mFlareSeed = scheme->AddProperty(PostPersistentData::FLARE_SEED, "flareSeed")
 		.SetRequired(false)
 		.GetProxy();
 
-	mAmount = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_AMOUNT, "amount", nullptr))
+	mAmount = scheme->AddProperty(PostPersistentData::FLARE_AMOUNT, "amount")
 		.SetScale(0.01f)
 		.GetProxy();
 
-	mTime = scheme->AddProperty(ShaderProperty("timer", "iTime", nullptr))
-		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+	mTime = scheme->AddProperty("timer", "iTime")
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mLightPos = scheme->AddProperty(ShaderProperty("light_pos", "light_pos", nullptr))
-		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+	mLightPos = scheme->AddProperty("light_pos", "light_pos")
+		.SetFlag(PropertyFlag::SKIP)
 		.SetType(EPropertyType::VEC4)
 		.GetProxy();
 
-	mTint = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_TINT, "tint", nullptr))
+	mTint = scheme->AddProperty(PostPersistentData::FLARE_TINT, "tint")
 		.SetType(EPropertyType::VEC4)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mInner = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_INNER, "inner", nullptr))
+	mInner = scheme->AddProperty(PostPersistentData::FLARE_INNER, "inner")
 		.SetScale(0.01f)
 		.GetProxy();
-	mOuter = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_OUTER, "outer", nullptr))
+	mOuter = scheme->AddProperty(PostPersistentData::FLARE_OUTER, "outer")
 		.SetScale(0.01f)
 		.GetProxy();
 
-	mFadeToBorders = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_FADE_TO_BORDERS, "fadeToBorders", nullptr))
+	mFadeToBorders = scheme->AddProperty(PostPersistentData::FLARE_FADE_TO_BORDERS, "fadeToBorders")
 		.SetFlag(PropertyFlag::IsFlag, true)
 		.SetType(EPropertyType::FLOAT)
 		.GetProxy();
-	mBorderWidth = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_BORDER_WIDTH, "borderWidth", nullptr)).GetProxy();
-	mFeather = scheme->AddProperty(ShaderProperty(PostPersistentData::FLARE_BORDER_FEATHER, "feather", nullptr))
+	mBorderWidth = scheme->AddProperty(PostPersistentData::FLARE_BORDER_WIDTH, "borderWidth").GetProxy();
+	mFeather = scheme->AddProperty(PostPersistentData::FLARE_BORDER_FEATHER, "feather")
 		.SetScale(0.01f)
 		.GetProxy();
 }

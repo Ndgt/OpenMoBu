@@ -34,8 +34,8 @@ const char* EffectShaderMotionBlur::GetMaskingChannelPropertyName() const noexce
 
 void EffectShaderMotionBlur::OnPopulateProperties(PropertyScheme* scheme)
 {
-	mDt = scheme->AddProperty(ShaderProperty("dt", "dt", EPropertyType::FLOAT))
-		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+	mDt = scheme->AddProperty("dt", "dt", EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 }
 

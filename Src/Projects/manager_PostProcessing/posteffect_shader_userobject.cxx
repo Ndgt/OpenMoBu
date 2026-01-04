@@ -558,14 +558,6 @@ bool UserBufferShader::OnRenderPassBegin(const int pass, PostEffectRenderContext
 	return true;
 }
 
-bool UserBufferShader::OnPrepareUniforms(const int variationIndex)
-{
-	if (!GetShaderPtr())
-		return false;
-
-	return true;
-}
-
 void UserBufferShader::OnPropertySchemeRemoved(const PropertyScheme* scheme)
 {
 	mPropertiesToRemove.clear();

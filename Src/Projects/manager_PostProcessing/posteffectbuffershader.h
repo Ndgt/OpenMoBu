@@ -128,20 +128,17 @@ protected:
 	std::unique_ptr<const PropertyScheme> mRenderPropertyScheme; // the property scheme to use in render thread
 
 	ShaderPropertyProxy UseMaskingProperty;
-
+	
+	// register common properties, like use masking, masking channel, top/bottom clipping, etc.
 	void MakeCommonProperties(PropertyScheme* scheme);
 
+	// register properties in the scheme, properties that could be not directly shader uniforms
 	virtual void OnPopulateProperties(PropertyScheme* scheme) = 0;
-
-	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
-	//virtual void OnPropertyAdded(ShaderProperty& property) {}
 
 	// user object can remove previously created properties
 	virtual void OnPropertySchemeRemoved(const PropertyScheme* scheme) {}
 	// user object can make new fb properties according to populated property scheme
 	virtual void OnPropertySchemeAdded(const PropertyScheme* scheme) {}
-
-	virtual bool OnPrepareUniforms(const int variationIndex) { return true; }
 
 public:
 	

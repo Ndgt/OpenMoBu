@@ -276,7 +276,7 @@ bool EffectShaderPropertyProcessor::CollectUIValues(FBComponent* component, Post
 	{
 		ShaderPropertyValue value(shaderProperty.GetDefaultValue());
 		
-		if (!shaderProperty.HasFlag(PropertyFlag::ShouldSkip))
+		if (!shaderProperty.HasFlag(PropertyFlag::SKIP))
 		{
 			FBProperty* fbProperty = shaderProperty.GetFBProperty();
 			
@@ -862,10 +862,13 @@ int PostEffectBufferShader::ReflectUniforms(PropertyScheme* scheme) const
 
 bool PostEffectBufferShader::InitializeUniforms(PropertyScheme* scheme, int varianceIndex)
 {
+	if (!GetShaderPtr())
+		return false;
+
 	ReflectUniforms(scheme);
 	UploadDefaultValues(scheme);
 
-	return OnPrepareUniforms(varianceIndex);
+	return true;
 }
 
 void PostEffectBufferShader::UploadDefaultValues(PropertyScheme* scheme)

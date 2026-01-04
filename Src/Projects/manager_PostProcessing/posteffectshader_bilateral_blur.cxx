@@ -94,7 +94,7 @@ void PostEffectShaderBilateralBlur::OnPopulateProperties(PropertyScheme* scheme)
 
 		BlurScale = scheme->AddProperty(ShaderProperty("scale", "scale"))
 			.SetType(EPropertyType::VEC2)
-			.SetFlag(PropertyFlag::ShouldSkip, true)
+			.SetFlag(PropertyFlag::SKIP, true)
 			.GetProxy();
 	}
 }

@@ -60,7 +60,7 @@ enum class PropertyFlag : uint8_t
 	IsFlag = 3, // when bool UI value is converted into float [0; 1] uniform
 	IsColor = 4,
 	ConvertWorldToScreenSpace = 5, // this is when world space vector3 is converted into screen space vector2 uniform
-	ShouldSkip = 6, //!< this is for manual processing of property (like manual reading and setting value)
+	SKIP = 6, //!< this is for manual processing of property (like manual reading and setting value)
 	INVERT_VALUE = 7 //!< a given property value is going to be written as 1.0 - value to the uniform
 };
 

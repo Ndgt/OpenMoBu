@@ -119,7 +119,7 @@ public:
 
 		ShaderProperty& SetType(EPropertyType newType);
 		inline EPropertyType GetType() const { return mDefaultValue.GetType();  }
-		ShaderProperty& SetFlag(PropertyFlag testFlag, bool setValue);
+		ShaderProperty& SetFlag(PropertyFlag testFlag, bool setValue=true);
 		bool HasFlag(PropertyFlag testFlag) const;
 
 		// toggle a check if glsl location is found
@@ -196,6 +196,8 @@ public:
 
 		ShaderProperty& AddProperty(const ShaderProperty& property);
 		ShaderProperty& AddProperty(ShaderProperty&& property);
+		ShaderProperty& AddProperty(std::string_view nameIn, std::string_view uniformNameIn, FBProperty* fbPropertyIn = nullptr);
+		ShaderProperty& AddProperty(std::string_view nameIn, std::string_view uniformNameIn, EPropertyType typeIn, FBProperty* fbPropertyIn = nullptr);
 
 		bool IsEmpty() const { return properties.empty(); }
 

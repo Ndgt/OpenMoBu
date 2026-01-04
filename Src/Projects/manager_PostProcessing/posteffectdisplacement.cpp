@@ -37,25 +37,25 @@ void EffectShaderDisplacement::OnPopulateProperties(PropertyScheme* scheme)
 	// publish input connection of the effect
 	//  input connections we can use to - look for locations, to read values from a given input data component, bind values from values into shader uniforms
 
-	scheme->AddProperty(ShaderProperty("color", "inputSampler"))
+	scheme->AddProperty("color", "inputSampler")
 		.SetType(EPropertyType::TEXTURE)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
-	mTime = scheme->AddProperty(ShaderProperty("time", "iTime", nullptr))
-		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+	mTime = scheme->AddProperty("time", "iTime")
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mUseQuakeEffect = scheme->AddProperty(ShaderProperty(PostPersistentData::DISP_USE_QUAKE_EFFECT, "useQuakeEffect", nullptr))
-		.SetFlag(PropertyFlag::IsFlag, true)
+	mUseQuakeEffect = scheme->AddProperty(PostPersistentData::DISP_USE_QUAKE_EFFECT, "useQuakeEffect")
+		.SetFlag(PropertyFlag::IsFlag)
 		.GetProxy();
 
-	mXDistMag = scheme->AddProperty(ShaderProperty(PostPersistentData::DISP_MAGNITUDE_X, "xDistMag", nullptr))
+	mXDistMag = scheme->AddProperty(PostPersistentData::DISP_MAGNITUDE_X, "xDistMag")
 		.SetScale(0.0001f)
 		.GetProxy();
-	mYDistMag = scheme->AddProperty(ShaderProperty(PostPersistentData::DISP_MAGNITUDE_Y, "yDistMag", nullptr))
+	mYDistMag = scheme->AddProperty(PostPersistentData::DISP_MAGNITUDE_Y, "yDistMag")
 		.SetScale(0.0001f)
 		.GetProxy();
-	mXSineCycles = scheme->AddProperty(ShaderProperty(PostPersistentData::DISP_SIN_CYCLES_X, "xSineCycles", nullptr)).GetProxy();
-	mYSineCycles = scheme->AddProperty(ShaderProperty(PostPersistentData::DISP_SIN_CYCLES_Y, "ySineCycles", nullptr)).GetProxy();
+	mXSineCycles = scheme->AddProperty(PostPersistentData::DISP_SIN_CYCLES_X, "xSineCycles").GetProxy();
+	mYSineCycles = scheme->AddProperty(PostPersistentData::DISP_SIN_CYCLES_Y, "ySineCycles").GetProxy();
 }
 
 bool EffectShaderDisplacement::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const

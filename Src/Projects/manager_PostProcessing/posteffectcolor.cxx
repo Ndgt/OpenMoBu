@@ -158,19 +158,19 @@ const char* EffectShaderColor::GetMaskingChannelPropertyName() const noexcept
 
 void EffectShaderColor::OnPopulateProperties(PropertyScheme* scheme)
 {
-	scheme->AddProperty(ShaderProperty("color", "sampler0"))
+	scheme->AddProperty("color", "sampler0")
 		.SetType(EPropertyType::TEXTURE)
-		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetFlag(PropertyFlag::SKIP)
 		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 
-	mChromaticAberration = scheme->AddProperty(ShaderProperty("gCA", "gCA", EPropertyType::VEC4))
-		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+	mChromaticAberration = scheme->AddProperty("gCA", "gCA", EPropertyType::VEC4)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mCSB = scheme->AddProperty(ShaderProperty("gCSB", "gCSB", EPropertyType::VEC4))
-		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+	mCSB = scheme->AddProperty("gCSB", "gCSB", EPropertyType::VEC4)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
-	mHue = scheme->AddProperty(ShaderProperty("gHue", "gHue", EPropertyType::VEC4))
-		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+	mHue = scheme->AddProperty("gHue", "gHue", EPropertyType::VEC4)
+		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 }
 
