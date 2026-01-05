@@ -72,6 +72,12 @@ public:
 	bool Render(FBEvaluateInfo* pEvaluateInfoIn, 
 		PostEffectBuffers* buffers);
 
+	void SetPostProcessData(PostPersistentData* postProcessDataIn)
+	{
+		postProcessData = postProcessDataIn;
+		effectChain.SetPersistenceData(postProcessData);
+	}
+
 private:
 
 	PostEffectContextProxy::Cache mCache[2];
