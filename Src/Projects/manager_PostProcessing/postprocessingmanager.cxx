@@ -27,8 +27,7 @@ FBRegisterCustomManager(POSTPROCESSING_MANAGER__CLASS);         // Manager class
 #define RENDER_HUD_RECT_BOTTOM			"RectangleBottom"
 
 // track the state of OpenGL viewport context
-HGLRC	PostProcessingManager::gCurrentContext = 0;
-std::map<HGLRC, PostProcessContextData*>	PostProcessingManager::gContextMap;
+std::map<HGLRC, std::unique_ptr<PostProcessContextData>>	PostProcessingManager::gContextMap;
 
 PostProcessingManager *gManager = nullptr;
 
@@ -365,8 +364,8 @@ void PostProcessingManager::EventFileNew(HISender pSender, HKEvent pEvent)
 
 	for (auto& contextPair : gContextMap)
 	{
-		PostProcessContextData* pContextData = contextPair.second;
-		pContextData->SetNeedToResetPaneSettings(true);
+		PostProcessContextData& contextData = *contextPair.second; 
+		contextData.SetNeedToResetPaneSettings(true);
 	}
 }
 
@@ -375,8 +374,8 @@ void PostProcessingManager::EventFileOpen(HISender pSender, HKEvent pEvent)
 	skipRender = true;
 	for (auto& contextPair : gContextMap)
 	{
-		PostProcessContextData* pContextData = contextPair.second;
-		pContextData->SetNeedToResetPaneSettings(true);
+		PostProcessContextData& contextData = *contextPair.second;
+		contextData.SetNeedToResetPaneSettings(true);
 	}
 }
 
@@ -395,8 +394,8 @@ void PostProcessingManager::EventFileOpenComplete(HISender pSender, HKEvent pEve
 	skipRender = false;
 	for (auto& contextPair : gContextMap)
 	{
-		PostProcessContextData* pContextData = contextPair.second;
-		pContextData->SetNeedToResetPaneSettings(true);
+		PostProcessContextData& contextData = *contextPair.second;
+		contextData.SetNeedToResetPaneSettings(true);
 	}
 }
 
@@ -417,6 +416,18 @@ void PostProcessingManager::EventConnNotify(HISender pSender, HKEvent pEvent)
 	
 }
 
+PostProcessContextData* PostProcessingManager::GetCurrentContextData()
+{
+	HGLRC hContext = wglGetCurrentContext();
+	if (!hContext)
+		return nullptr;
+
+	auto iter = gContextMap.find(hContext);
+	if (iter == end(gContextMap))
+		return nullptr;
+
+	return iter->second.get();
+}
 
 void PostProcessingManager::OnPerFrameSynchronizationCallback(HISender pSender, HKEvent pEvent)
 {
@@ -428,15 +439,11 @@ void PostProcessingManager::OnPerFrameSynchronizationCallback(HISender pSender, 
 		// plugin developer could add some lightweight scene modification tasks here
 		// and no need to worry complicated thread issues. 
 		//
-		auto iter = gContextMap.find(gCurrentContext);
-
-		if (iter == end(gContextMap))
+		if (PostProcessContextData* pContextData = GetCurrentContextData())
 		{
-			return;
+			pContextData->Synchronize();
+			mEvaluateContextData = pContextData;
 		}
-
-		PostProcessContextData* pContextData = iter->second;
-		pContextData->Synchronize();
 	}
 }
 
@@ -448,16 +455,15 @@ void PostProcessingManager::OnPerFrameEvaluationPipelineCallback(HISender pSende
 	
 	if (timing == FBGlobalEvalCallbackTiming::kFBGlobalEvalCallbackAfterDAG)
 	{
-		FBEvaluateInfo* evalInfo = lFBEvent.GetEvaluateInfo();
-		FBTime systemTime = evalInfo->GetSystemTime();
-		FBTime localTime = evalInfo->GetLocalTime();
-		
 		// TODO: this is not context based, we have to evaluate once
 		// and reuse in every context !
-		if (auto iter = gContextMap.find(gCurrentContext); iter != end(gContextMap))
+		if (mEvaluateContextData)
 		{
-			PostProcessContextData* pContextData = iter->second;
-			pContextData->Evaluate(systemTime, localTime, evalInfo);
+			FBEvaluateInfo* evalInfo = lFBEvent.GetEvaluateInfo();
+			FBTime systemTime = evalInfo->GetSystemTime();
+			FBTime localTime = evalInfo->GetLocalTime();
+
+			mEvaluateContextData->Evaluate(systemTime, localTime, evalInfo);
 		}
 	}
 }
@@ -470,25 +476,23 @@ void PostProcessingManager::OnPerFrameEvaluationPipelineCallback(HISender pSende
 void PostProcessingManager::CheckForAContextChange()
 {
 	HGLRC hContext = wglGetCurrentContext();
+	if (!hContext)
+		return;
 
-	if (0 == gCurrentContext)
+	auto& entry = gContextMap.try_emplace(hContext, nullptr).first->second;
+	if (!entry)
 	{
-		// initialize for the first time
-		gCurrentContext = hContext;
+		entry = std::make_unique<PostProcessContextData>();
+		entry->Init();
+		LOGI("PostProcessing: created context data for HGLRC=%p\n", (void*)hContext);
 	}
 
-	auto iter = gContextMap.find(hContext);
-	if (iter == end(gContextMap))
+	// Track last context per thread
+	static thread_local HGLRC lastContext = nullptr;
+	if (hContext != lastContext)
 	{
-		PostProcessContextData *newData = new PostProcessContextData();
-		newData->Init();
-		gContextMap.insert(std::make_pair(hContext, newData));
-	}
-
-	if (hContext != gCurrentContext)
-	{
-		gCurrentContext = hContext;
-		LOGI("> !! CHANGE CONTEXT !!\n");
+		lastContext = hContext;
+		LOGI("PostProcessing: context changed to HGLRC=%p\n", (void*)hContext);
 	}
 }
 
@@ -497,11 +501,9 @@ void PostProcessingManager::PreRenderFirstEntry()
 {
 	CheckForAContextChange();
 
-	auto iter = gContextMap.find(gCurrentContext);
-
-	if (iter != end(gContextMap))
+	if (PostProcessContextData* pContextData = GetCurrentContextData())
 	{
-		iter->second->PreRenderFirstEntry();
+		pContextData->PreRenderFirstEntry();
 	}
 }
 
@@ -519,14 +521,9 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 		PreRenderFirstEntry();
 	}
 
-	auto iter = gContextMap.find(gCurrentContext);
-
-	if (iter == end(gContextMap))
-	{
+	PostProcessContextData* pContextData = GetCurrentContextData();
+	if (!pContextData)
 		return;
-	}
-
-	PostProcessContextData* pContextData = iter->second;
 	bool usePostProcessing = false;
 
 	for (int i = 0; i<pContextData->mRenderPaneCount; ++i)
@@ -543,10 +540,10 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 	{
 	case kFBGlobalEvalCallbackBeforeRender:
 		{
-		if (pContextData->mViewerViewport[2] <= 1 || pContextData->mViewerViewport[3] <= 1)
-		{
-			usePostProcessing = false;
-		}
+			if (pContextData->mViewerViewport[2] <= 1 || pContextData->mViewerViewport[3] <= 1)
+			{
+				usePostProcessing = false;
+			}
 
 			mLastProcessCompositions = usePostProcessing;
 			pContextData->RenderBeforeRender(usePostProcessing);
@@ -556,7 +553,6 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 				PrepVideoClipsTimeWrap();
 			}
 			
-
 		} break;
 	case kFBGlobalEvalCallbackAfterRender:
 		{
@@ -575,14 +571,11 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 			FBTime localTime = evalInfo->GetLocalTime();
 
 			pContextData->RenderAfterRender(usePostProcessing, systemTime, localTime, evalInfo);
-
 		} break;
 
 	default:
 		break;
 	}
-
-	CHECK_GL_ERROR();
 }
 
 
@@ -590,15 +583,13 @@ bool PostProcessingManager::ExternalRenderAfterRender()
 {
 	FBProfilerHelper lProfiling(FBProfiling_TaskCycleIndex(PostProcessRenderer), FBGetDisplayInfo(), FBGetRenderingTaskCycle());
 
-	auto iter = gContextMap.find(gCurrentContext);
-
-	if (iter != end(gContextMap))
+	if (PostProcessContextData* pContextData = GetCurrentContextData())
 	{
 		FBSystem& system = FBSystem::TheOne();
 		FBTime systemTime = system.SystemTime;
 		FBTime localTime = system.LocalTime;
 
-		return iter->second->RenderAfterRender(mLastProcessCompositions, systemTime, localTime, FBGetDisplayInfo());
+		return pContextData->RenderAfterRender(mLastProcessCompositions, systemTime, localTime, FBGetDisplayInfo());
 	}
 	return false;
 }
@@ -611,22 +602,20 @@ void PostProcessingManager::OnVideoFrameRendering(HISender pSender, HKEvent pEve
 	{
 		PreRenderFirstEntry();
 
-		auto iter = gContextMap.find(gCurrentContext);
-		if (iter == end(gContextMap))
-			return;
-
+		if (PostProcessContextData* pContextData = GetCurrentContextData())
+		{
+			pContextData->VideoRenderingBegin();
+		}
 		// turn off preview mode and switch quality settings if needed
-		iter->second->VideoRenderingBegin();
 		PushUpperLowerClipForEffects();
 	}
 	else if (levent.GetState() == FBEventVideoFrameRendering::eEndRendering)
 	{
-		auto iter = gContextMap.find(gCurrentContext);
-		if (iter == end(gContextMap))
-			return;
-
+		if (PostProcessContextData* pContextData = GetCurrentContextData())
+		{
+			pContextData->VideoRenderingEnd();
+		}
 		// turn on back preview mode and display quality settings
-		iter->second->VideoRenderingEnd();
 		PopUpperLowerClipForEffects();
 	}
 }

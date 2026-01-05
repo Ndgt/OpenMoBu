@@ -95,9 +95,8 @@ private:
 	bool		mDoVideoClipTimewrap{ false };
 
 	//
-	static HGLRC			gCurrentContext;
-
-	static std::map<HGLRC, PostProcessContextData*>	gContextMap;
+	PostProcessContextData* mEvaluateContextData{ nullptr };
+	static std::map<HGLRC, std::unique_ptr<PostProcessContextData>>	gContextMap;
 
 
 	int				mEnterId{ 0 };
@@ -122,6 +121,7 @@ private:
 	
 	void	CheckForAContextChange();
 
+	PostProcessContextData* GetCurrentContextData();
 	
 	/*
 	bool	OpenSocket(const int portSend, const int portRecv, bool blocking);
