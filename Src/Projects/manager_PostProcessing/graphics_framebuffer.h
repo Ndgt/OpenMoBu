@@ -346,9 +346,9 @@ public:
 		if (fbo_attached != _fbo)
 		{
 			fbo_attached = _fbo;
-			//fbo = _fbo;
-			PrepAttachedFBO();
+			extendedInfo.Set(1.0, 0, 0, 0, 0);
 		}
+		PrepAttachedFBO();
 	}
 	void DetachFBO()
 	{
@@ -359,29 +359,14 @@ public:
 		}
 		fbo_attached = 0;
 	}
-	bool isFboAttached() const
-	{
-		return (fbo_attached > 0);
-	}
-	const GLuint GetAttachedFBO() const
-	{
-		return fbo_attached;
-	}
+	bool isFboAttached() const { return (fbo_attached > 0); }
+	const GLuint GetAttachedFBO() const { return fbo_attached; }
 	
 	void PrepAttachedFBO();
-
-	const GLuint GetFBOMS() const
-	{
-		return fboms;
-	}
-	const GLuint GetFBOBIG() const
-	{
-		return fbobig;
-	}
-	const GLuint GetFinalFBO() const
-	{
-		return fbo;
-	}
+	
+	const GLuint GetFBOMS() const { return fboms; }
+	const GLuint GetFBOBIG() const { return fbobig; }
+	const GLuint GetFinalFBO() const { return fbo; }
 
 	const int getNumberOfDepthSamples() const
 	{
@@ -389,20 +374,21 @@ public:
 			return extendedInfo.GetNumberOfSamples();
 		return mainInfo.GetNumberOfSamples();
 	}
-	const int getNumberOfCoverageSamples() const
-	{
-		return mainInfo.GetNumberOfCoverageSamples();
-	}
+	const int getNumberOfCoverageSamples() const { return mainInfo.GetNumberOfCoverageSamples(); }
 
 	//void CreateTextures(int _width, int _height, double ssfact, int _depthSamples, int _coverageSamples, bool createColor, bool createDepth, bool createNormal, bool createMask);
 	void CreateTextures(texture_pack &pack, int width, int height, int depthSamples, int coverageSamples, bool createColor, bool createDepth, bool createStencil, bool createNormal, bool createMask);
 
 	const int GetWidth() const
 	{
+		if (isFboAttached())
+			return extendedInfo.GetWidth();
 		return mainInfo.GetWidth();
 	}
 	const int GetHeight() const
 	{
+		if (isFboAttached())
+			return extendedInfo.GetHeight();
 		return mainInfo.GetHeight();
 	}
 	const int GetBufferWidth() const

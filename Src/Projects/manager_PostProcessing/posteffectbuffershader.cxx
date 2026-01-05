@@ -615,9 +615,9 @@ void PostEffectBufferShader::Render(PostEffectRenderContext& renderContext, Post
 
 	if (GetNumberOfPasses() == 0)
 		return;
-
+	
 	OnRenderBegin(renderContext, effectContext);
-
+	
 	if (bIsNeedToUpdatePropertyScheme)
 	{
 		// change shader, change context, reload shader, we have to re-initialize property scheme with a new one
@@ -957,11 +957,11 @@ void PostEffectBufferShader::BindSystemUniforms(const PostEffectContextProxy* ef
 
 	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D); loc >= 0)
 	{
-		glProgramUniform1f(programId, loc, 0);
+		glProgramUniform1i(programId, loc, 0);
 	}
 	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::iCHANNEL0); loc >= 0)
 	{
-		glProgramUniform1f(programId, loc, 0);
+		glProgramUniform1i(programId, loc, 0);
 	}
 	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D); loc >= 0)
 	{

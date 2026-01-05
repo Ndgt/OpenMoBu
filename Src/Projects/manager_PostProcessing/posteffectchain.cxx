@@ -666,7 +666,7 @@ bool PostEffectChain::Render(
 			RenderSceneMaskToTexture(effectCollection->mShaderSceneMasked.get(), i, mSettings->Masks[i], buffers);
 		}
 	}
-	
+
 	// 3a. blur masks (if applied)
 
 	if (data.isMaskBlurRequested)

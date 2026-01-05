@@ -65,6 +65,10 @@ public:
 		return mIsCompressedDataReady;
 	}
 
+	void SetPersistenceData(PostPersistentData* pData)
+	{
+		mSettings = pData;
+	}
 	
 	PingPongData* GetPingPongDataPtr() { return &mDoubleBufferPingPongData; }
 
