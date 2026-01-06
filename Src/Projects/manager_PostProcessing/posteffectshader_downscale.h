@@ -54,7 +54,7 @@ protected:
 		return false;
 	}
 
-	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
+	virtual void OnPopulateProperties(ShaderPropertyScheme* scheme) override;
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;

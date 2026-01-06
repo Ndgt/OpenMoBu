@@ -34,7 +34,7 @@ const char* EffectShaderFilmGrain::GetMaskingChannelPropertyName() const noexcep
 	return PostPersistentData::GRAIN_MASKING_CHANNEL;
 }
 
-void EffectShaderFilmGrain::OnPopulateProperties(PropertyScheme* scheme)
+void EffectShaderFilmGrain::OnPopulateProperties(ShaderPropertyScheme* scheme)
 {
 	scheme->AddProperty("color", "sampler0")
 		.SetType(EPropertyType::TEXTURE)

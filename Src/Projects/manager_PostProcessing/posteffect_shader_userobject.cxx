@@ -367,7 +367,7 @@ bool EffectShaderUserObject::DoExportShaderScheme()
 void EffectShaderUserObject::DefaultValues()
 {}
 
-FBProperty* EffectShaderUserObject::MakePropertyInt(const UserBufferShader::ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertyInt(const ShaderProperty& prop)
 {
 	constexpr const bool isUser{ false };
 	FBProperty* newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_int, ANIMATIONNODE_TYPE_INTEGER, false, isUser, nullptr);
@@ -375,7 +375,7 @@ FBProperty* EffectShaderUserObject::MakePropertyInt(const UserBufferShader::Shad
 	return newProp;
 }
 
-FBProperty* EffectShaderUserObject::MakePropertyFloat(const UserBufferShader::ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertyFloat(const ShaderProperty& prop)
 {
 	constexpr const bool isUser{ false };
 	FBProperty* newProp = nullptr;
@@ -398,7 +398,7 @@ FBProperty* EffectShaderUserObject::MakePropertyFloat(const UserBufferShader::Sh
 	return newProp;
 }
 
-FBProperty* EffectShaderUserObject::MakePropertyVec2(const UserBufferShader::ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertyVec2(const ShaderProperty& prop)
 {
 	constexpr const bool isUser{ false };
 	FBProperty* newProp = nullptr;
@@ -417,7 +417,7 @@ FBProperty* EffectShaderUserObject::MakePropertyVec2(const UserBufferShader::Sha
 	return newProp;
 }
 
-FBProperty* EffectShaderUserObject::MakePropertyVec3(const UserBufferShader::ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertyVec3(const ShaderProperty& prop)
 {
 	constexpr const bool isUser{ false };
 	FBProperty* newProp = nullptr;
@@ -435,7 +435,7 @@ FBProperty* EffectShaderUserObject::MakePropertyVec3(const UserBufferShader::Sha
 	return newProp;
 }
 
-FBProperty* EffectShaderUserObject::MakePropertyVec4(const UserBufferShader::ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertyVec4(const ShaderProperty& prop)
 {
 	constexpr const bool isUser{ false };
 	FBProperty* newProp = nullptr;
@@ -453,7 +453,7 @@ FBProperty* EffectShaderUserObject::MakePropertyVec4(const UserBufferShader::Sha
 	return newProp;
 }
 
-FBProperty* EffectShaderUserObject::MakePropertySampler(const UserBufferShader::ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertySampler(const ShaderProperty& prop)
 {
 	constexpr const bool isUser{ false };
 	FBProperty* newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_object, ANIMATIONNODE_TYPE_OBJECT, false, isUser, nullptr);
@@ -468,7 +468,7 @@ FBProperty* EffectShaderUserObject::MakePropertySampler(const UserBufferShader::
 	return nullptr;
 }
 
-FBProperty* EffectShaderUserObject::GetOrMakeProperty(const UserBufferShader::ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::GetOrMakeProperty(const ShaderProperty& prop)
 {
 	FBProperty* fbProperty = PropertyList.Find(prop.GetName());
 	const FBPropertyType fbPropertyType = IEffectShaderConnections::ShaderPropertyToFBPropertyType(prop);
@@ -558,25 +558,29 @@ bool UserBufferShader::OnRenderPassBegin(const int pass, PostEffectRenderContext
 	return true;
 }
 
-void UserBufferShader::OnPropertySchemeRemoved(const PropertyScheme* scheme)
+void UserBufferShader::OnPropertySchemeUpdated(const ShaderPropertyScheme* newScheme, const ShaderPropertyScheme* oldScheme)
 {
+	if (!newScheme)
+		return;
+
+	std::unordered_map<uint32_t, FBProperty*> mPropertiesToRemove;
 	mPropertiesToRemove.clear();
 
-	for (const auto& prop : scheme->GetProperties())
+	if (oldScheme)
 	{
-		if (prop.IsGeneratedByUniform())
+		for (const auto& prop : oldScheme->GetProperties())
 		{
-			if (FBProperty* fbProperty = mUserObject->PropertyList.Find(prop.GetName()))
+			if (prop.IsGeneratedByUniform())
 			{
-				mPropertiesToRemove.emplace(prop.GetNameHash(), fbProperty);
+				if (FBProperty* fbProperty = mUserObject->PropertyList.Find(prop.GetName()))
+				{
+					mPropertiesToRemove.emplace(prop.GetNameHash(), fbProperty);
+				}
 			}
 		}
 	}
-}
-
-void UserBufferShader::OnPropertySchemeAdded(const PropertyScheme* scheme)
-{
-	for (const auto& prop : scheme->GetProperties())
+	
+	for (const auto& prop : newScheme->GetProperties())
 	{
 		if (prop.IsGeneratedByUniform())
 		{
@@ -595,10 +599,6 @@ void UserBufferShader::OnPropertySchemeAdded(const PropertyScheme* scheme)
 		mUserObject->PropertyRemove(pair.second);
 	}
 	mPropertiesToRemove.clear();
-}
-
-void UserBufferShader::OnPopulateProperties(PropertyScheme* scheme)
-{
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation

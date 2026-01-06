@@ -204,7 +204,7 @@ bool StandardEffectCollection::LoadShaders()
 		LOGE("[PostProcessing] Failed to find shaders location!\n");
 		return false;
 	}
-
+	
 	LOGE("[PostProcessing] Shaders Location - %s\n", shadersPath);
 
 	mFishEye.reset(ShaderFactory(BuildInEffect::FISHEYE, shadersPath));

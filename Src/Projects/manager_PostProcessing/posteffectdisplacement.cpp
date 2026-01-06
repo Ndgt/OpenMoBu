@@ -32,7 +32,7 @@ const char* EffectShaderDisplacement::GetMaskingChannelPropertyName() const noex
 	return PostPersistentData::DISP_MASKING_CHANNEL;
 }
 
-void EffectShaderDisplacement::OnPopulateProperties(PropertyScheme* scheme)
+void EffectShaderDisplacement::OnPopulateProperties(ShaderPropertyScheme* scheme)
 {
 	// publish input connection of the effect
 	//  input connections we can use to - look for locations, to read values from a given input data component, bind values from values into shader uniforms

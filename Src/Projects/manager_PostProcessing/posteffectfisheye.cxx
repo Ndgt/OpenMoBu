@@ -34,7 +34,7 @@ const char* EffectShaderFishEye::GetMaskingChannelPropertyName() const noexcept
 	return PostPersistentData::FISHEYE_MASKING_CHANNEL;
 }
 
-void EffectShaderFishEye::OnPopulateProperties(PropertyScheme* scheme)
+void EffectShaderFishEye::OnPopulateProperties(ShaderPropertyScheme* scheme)
 {
 	scheme->AddProperty("color", "sampler0")
 		.SetType(EPropertyType::TEXTURE)

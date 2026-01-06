@@ -20,7 +20,7 @@ PostEffectShaderLinearDepth::PostEffectShaderLinearDepth(FBComponent* uiComponen
 	: PostEffectBufferShader(uiComponent)
 {}
 
-void PostEffectShaderLinearDepth::OnPopulateProperties(PropertyScheme* scheme)
+void PostEffectShaderLinearDepth::OnPopulateProperties(ShaderPropertyScheme* scheme)
 {
 	mClipInfo = scheme->AddProperty(ShaderProperty("clipInfo", "gClipInfo"))
 		.SetType(EPropertyType::VEC4)

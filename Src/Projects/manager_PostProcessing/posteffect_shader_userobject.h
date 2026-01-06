@@ -126,20 +126,12 @@ protected:
 	//!< if true, once shader is loaded, let's inspect all the uniforms and make properties from them
 	virtual bool DoPopulatePropertiesFromUniforms() const override { return true; }
 
-	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
-
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 
-	// a previous property scheme is going to be removed
-	virtual void OnPropertySchemeRemoved(const PropertyScheme* scheme) override;
-
 	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
-	virtual void OnPropertySchemeAdded(const PropertyScheme* scheme) override;
+	virtual void OnPropertySchemeUpdated(const ShaderPropertyScheme* newScheme, const ShaderPropertyScheme* oldScheme) override;
 
-private:
-
-	std::unordered_map<uint32_t, FBProperty*> mPropertiesToRemove;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -232,14 +224,14 @@ protected:
 	void	LoadFromConfig(const char *sessionFilter=nullptr);
 	void	LoadFarValueFromConfig();
 
-	FBProperty* MakePropertyInt(const UserBufferShader::ShaderProperty& prop);
-	FBProperty* MakePropertyFloat(const UserBufferShader::ShaderProperty& prop);
-	FBProperty* MakePropertyVec2(const UserBufferShader::ShaderProperty& prop);
-	FBProperty* MakePropertyVec3(const UserBufferShader::ShaderProperty& prop);
-	FBProperty* MakePropertyVec4(const UserBufferShader::ShaderProperty& prop);
-	FBProperty* MakePropertySampler(const UserBufferShader::ShaderProperty& prop);
+	FBProperty* MakePropertyInt(const ShaderProperty& prop);
+	FBProperty* MakePropertyFloat(const ShaderProperty& prop);
+	FBProperty* MakePropertyVec2(const ShaderProperty& prop);
+	FBProperty* MakePropertyVec3(const ShaderProperty& prop);
+	FBProperty* MakePropertyVec4(const ShaderProperty& prop);
+	FBProperty* MakePropertySampler(const ShaderProperty& prop);
 
-	FBProperty* GetOrMakeProperty(const UserBufferShader::ShaderProperty& prop);
+	FBProperty* GetOrMakeProperty(const ShaderProperty& prop);
 
 	static void ActionReloadShaders(HIObject pObject, bool value);
 	static void ActionOpenFolder(HIObject pObject, bool value);

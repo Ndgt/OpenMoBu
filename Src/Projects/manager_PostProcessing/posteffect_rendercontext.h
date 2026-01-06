@@ -9,7 +9,8 @@ GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "effectshaderconnections.h"
+#include "shaderproperty.h"
+#include "shaderpropertyscheme.h"
 #include "shaderpropertystorage.h"
 #include <unordered_map>
 
@@ -48,15 +49,15 @@ struct PostEffectRenderContext
 		overrideUniforms.clear();
 	}
 
-	void OverrideUniform(const IEffectShaderConnections::ShaderProperty* shaderProperty, float valueIn);
-	void OverrideUniform(const IEffectShaderConnections::ShaderProperty* shaderProperty, float x, float y);
-	void OverrideUniform(const IEffectShaderConnections::ShaderProperty* shaderProperty, float x, float y, float z, float w);
+	void OverrideUniform(const ShaderProperty* shaderProperty, float valueIn);
+	void OverrideUniform(const ShaderProperty* shaderProperty, float x, float y);
+	void OverrideUniform(const ShaderProperty* shaderProperty, float x, float y, float z, float w);
 
-	bool OverrideUniform(const IEffectShaderConnections::PropertyScheme* propertyScheme, const IEffectShaderConnections::ShaderPropertyProxy shaderProperty, 
+	bool OverrideUniform(const ShaderPropertyScheme* propertyScheme, const ShaderPropertyProxy shaderProperty, 
 		float valueIn);
-	bool OverrideUniform(const IEffectShaderConnections::PropertyScheme* propertyScheme, const IEffectShaderConnections::ShaderPropertyProxy shaderProperty,
+	bool OverrideUniform(const ShaderPropertyScheme* propertyScheme, const ShaderPropertyProxy shaderProperty,
 		float x, float y);
-	bool OverrideUniform(const IEffectShaderConnections::PropertyScheme* propertyScheme, const IEffectShaderConnections::ShaderPropertyProxy shaderProperty, 
+	bool OverrideUniform(const ShaderPropertyScheme* propertyScheme, const ShaderPropertyProxy shaderProperty, 
 		float x, float y, float z, float w);
 
 	// upload from a given map and apply override uniforms after that

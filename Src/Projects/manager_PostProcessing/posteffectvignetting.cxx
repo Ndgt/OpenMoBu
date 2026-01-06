@@ -30,7 +30,7 @@ const char* EffectShaderVignetting::GetMaskingChannelPropertyName() const noexce
 	return PostPersistentData::VIGN_MASKING_CHANNEL;
 }
 
-void EffectShaderVignetting::OnPopulateProperties(PropertyScheme* scheme)
+void EffectShaderVignetting::OnPopulateProperties(ShaderPropertyScheme* scheme)
 {
 	scheme->AddProperty("color", "colorSampler")
 		.SetType(EPropertyType::TEXTURE)

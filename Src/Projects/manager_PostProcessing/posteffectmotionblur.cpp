@@ -32,7 +32,7 @@ const char* EffectShaderMotionBlur::GetMaskingChannelPropertyName() const noexce
 	return PostPersistentData::MOTIONBLUR_MASKING_CHANNEL;
 }
 
-void EffectShaderMotionBlur::OnPopulateProperties(PropertyScheme* scheme)
+void EffectShaderMotionBlur::OnPopulateProperties(ShaderPropertyScheme* scheme)
 {
 	mDt = scheme->AddProperty("dt", "dt", EPropertyType::FLOAT)
 		.SetFlag(PropertyFlag::SKIP)

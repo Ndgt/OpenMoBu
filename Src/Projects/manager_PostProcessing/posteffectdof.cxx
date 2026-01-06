@@ -34,7 +34,7 @@ const char* EffectShaderDOF::GetMaskingChannelPropertyName() const noexcept
 	return PostPersistentData::DOF_MASKING_CHANNEL;
 }
 
-void EffectShaderDOF::OnPopulateProperties(PropertyScheme* scheme)
+void EffectShaderDOF::OnPopulateProperties(ShaderPropertyScheme* scheme)
 {
 	// Sample slots
 

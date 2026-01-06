@@ -20,7 +20,7 @@ PostEffectShaderDownscale::PostEffectShaderDownscale(FBComponent* uiComponent)
 	: PostEffectBufferShader(uiComponent)
 {}
 
-void PostEffectShaderDownscale::OnPopulateProperties(PropertyScheme* scheme)
+void PostEffectShaderDownscale::OnPopulateProperties(ShaderPropertyScheme* scheme)
 {
 	mColorSampler = scheme->AddProperty(ShaderProperty("color", "sampler"))
 		.SetType(EPropertyType::TEXTURE)

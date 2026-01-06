@@ -156,7 +156,7 @@ const char* EffectShaderColor::GetMaskingChannelPropertyName() const noexcept
 	return PostPersistentData::COLOR_MASKING_CHANNEL;
 }
 
-void EffectShaderColor::OnPopulateProperties(PropertyScheme* scheme)
+void EffectShaderColor::OnPopulateProperties(ShaderPropertyScheme* scheme)
 {
 	scheme->AddProperty("color", "sampler0")
 		.SetType(EPropertyType::TEXTURE)

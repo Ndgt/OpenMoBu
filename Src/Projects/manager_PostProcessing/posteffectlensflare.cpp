@@ -31,7 +31,7 @@ const char* EffectShaderLensFlare::GetMaskingChannelPropertyName() const noexcep
 	return PostPersistentData::FLARE_MASKING_CHANNEL;
 }
 
-void EffectShaderLensFlare::OnPopulateProperties(PropertyScheme* scheme)
+void EffectShaderLensFlare::OnPopulateProperties(ShaderPropertyScheme* scheme)
 {
 	scheme->AddProperty("color", "sampler0")
 		.SetType(EPropertyType::TEXTURE)
@@ -106,13 +106,13 @@ void EffectShaderLensFlare::OnRenderBegin(PostEffectRenderContext& renderContext
 	if (!data)
 		return;
 
-	const int lastShaderIndex = GetCurrentShader();
+	const int lastShaderIndex = GetCurrentVariation();
 	const int newShaderIndex = data->FlareType.AsInt();
-	SetCurrentShader(newShaderIndex);
+	SetCurrentVariation(newShaderIndex);
 
 	if (newShaderIndex < 0 || newShaderIndex >= NUMBER_OF_SHADERS)
 	{
-		SetCurrentShader(0);
+		SetCurrentVariation(0);
 		const EFlareType newFlareType{ EFlareType::flare1 };
 		data->FlareType.SetData((void*)&newFlareType);
 	}
@@ -128,16 +128,16 @@ void EffectShaderLensFlare::OnRenderBegin(PostEffectRenderContext& renderContext
 		bIsNeedToUpdatePropertyScheme = true;
 	}
 
-	subShaders[mCurrentShader].CollectUIValues(mCurrentShader, effectContext, GetNumberOfPasses(), 0);
+	subShaders[mCurrentVariation].CollectUIValues(mCurrentVariation, effectContext, GetNumberOfPasses(), 0);
 }
 
 bool EffectShaderLensFlare::OnRenderPassBegin(int passIndex, PostEffectRenderContext& renderContext)
 {
-	const int currentShader = GetCurrentShader();
+	const int currentShader = GetCurrentVariation();
 	VERIFY(currentShader >= 0 && currentShader < GetNumberOfVariations());
 	const SubShader& subShader = subShaders[currentShader];
 
-	const IEffectShaderConnections::PropertyScheme* propertyScheme = GetPropertySchemePtr();
+	const ShaderPropertyScheme* propertyScheme = GetPropertySchemePtr();
 
 	if (passIndex >= 0 && passIndex < static_cast<int>(subShader.m_LightPositions.size()))
 	{

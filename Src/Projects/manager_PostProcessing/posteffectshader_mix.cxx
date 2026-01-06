@@ -72,7 +72,7 @@ const char* EffectShaderMix::GetMaskingChannelPropertyName() const
 	return nullptr;
 }
 
-void EffectShaderMix::OnPopulateProperties(PropertyScheme* scheme)
+void EffectShaderMix::OnPopulateProperties(ShaderPropertyScheme* scheme)
 {
 	if (FBIS(mUIComponent, EffectShaderMixUserObject))
 	{

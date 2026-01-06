@@ -474,7 +474,7 @@ void PostEffectChain::BlurMasksPass(const int maskIndex,
 	
 	if (const auto& blurEffect = effect->GetBufferShaderTypedPtr())
 	{
-		const IEffectShaderConnections::ShaderProperty* BlurProp = blurEffect->GetPropertySchemePtr()->GetProperty(blurEffect->BlurScale);
+		const ShaderProperty* BlurProp = blurEffect->GetPropertySchemePtr()->GetProperty(blurEffect->BlurScale);
 		const FBVector2d value = mSettings->GetMaskScale(maskIndex);
 		renderContext.OverrideUniform(BlurProp, static_cast<float>(value[0]), static_cast<float>(value[1]));
 	}
@@ -516,7 +516,7 @@ void PostEffectChain::MixMasksPass(PostEffectMix* effect,
 
 	if (const auto mixShader = effect->GetBufferShaderTypedPtr())
 	{
-		const IEffectShaderConnections::ShaderPropertyProxy BloomProp = mixShader->mBloom;
+		const ShaderPropertyProxy BloomProp = mixShader->mBloom;
 		const FBVector2d value = mSettings->GetMaskScale(maskIndex);
 		renderContext.OverrideUniform(mixShader->GetPropertySchemePtr(), BloomProp, 0.0f, 0.0f, 1.0f, 0.0f);
 	}

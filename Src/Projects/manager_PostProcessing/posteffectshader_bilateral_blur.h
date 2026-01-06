@@ -60,7 +60,7 @@ protected:
 	virtual const char* GetMaskingChannelPropertyName() const override;
 	virtual bool DoPopulatePropertiesFromUniforms() const override { return false; }
 
-	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
+	virtual void OnPopulateProperties(ShaderPropertyScheme* scheme) override;
 
 private:
 	

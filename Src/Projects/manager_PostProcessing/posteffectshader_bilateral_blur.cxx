@@ -71,7 +71,7 @@ const char* PostEffectShaderBilateralBlur::GetMaskingChannelPropertyName() const
 	return nullptr;
 }
 
-void PostEffectShaderBilateralBlur::OnPopulateProperties(PropertyScheme* scheme)
+void PostEffectShaderBilateralBlur::OnPopulateProperties(ShaderPropertyScheme* scheme)
 {
 	if (FBIS(mUIComponent, EffectShaderBilateralBlurUserObject))
 	{

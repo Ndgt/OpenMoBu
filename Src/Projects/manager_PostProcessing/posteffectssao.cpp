@@ -181,7 +181,7 @@ void EffectShaderSSAO::DeleteTextures()
 	}
 }
 
-void EffectShaderSSAO::OnPopulateProperties(PropertyScheme* scheme)
+void EffectShaderSSAO::OnPopulateProperties(ShaderPropertyScheme* scheme)
 {
 	scheme->AddProperty("color", "colorSampler")
 		.SetType(EPropertyType::TEXTURE)

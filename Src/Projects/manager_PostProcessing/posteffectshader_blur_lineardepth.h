@@ -62,7 +62,7 @@ protected:
 	// this is a predefined effect shader, properties are defined manually
 	bool DoPopulatePropertiesFromUniforms() const override { return false; }
 
-	virtual void OnPopulateProperties(PropertyScheme* scheme) override;
+	virtual void OnPopulateProperties(ShaderPropertyScheme* scheme) override;
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;

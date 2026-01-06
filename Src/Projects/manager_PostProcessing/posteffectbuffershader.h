@@ -125,24 +125,22 @@ protected:
 	friend class PostEffectRenderContext;
 
 	
-	std::unique_ptr<const PropertyScheme> mRenderPropertyScheme; // the property scheme to use in render thread
+	std::unique_ptr<const ShaderPropertyScheme> mRenderPropertyScheme; // the property scheme to use in render thread
 
 	ShaderPropertyProxy UseMaskingProperty;
 	
 	// register common properties, like use masking, masking channel, top/bottom clipping, etc.
-	void MakeCommonProperties(PropertyScheme* scheme);
+	void MakeCommonProperties(ShaderPropertyScheme* scheme);
 
 	// register properties in the scheme, properties that could be not directly shader uniforms
-	virtual void OnPopulateProperties(PropertyScheme* scheme) = 0;
+	virtual void OnPopulateProperties(ShaderPropertyScheme* scheme) {}
 
-	// user object can remove previously created properties
-	virtual void OnPropertySchemeRemoved(const PropertyScheme* scheme) {}
 	// user object can make new fb properties according to populated property scheme
-	virtual void OnPropertySchemeAdded(const PropertyScheme* scheme) {}
+	virtual void OnPropertySchemeUpdated(const ShaderPropertyScheme* newScheme, const ShaderPropertyScheme* oldScheme) {}
 
 public:
 	
-	const PropertyScheme* GetPropertySchemePtr() const { return mRenderPropertyScheme.get(); }
+	const ShaderPropertyScheme* GetPropertySchemePtr() const { return mRenderPropertyScheme.get(); }
 
 	//
 	// IEffectShaderConnections
@@ -158,12 +156,12 @@ public:
 
 	//! is being called after \ref Load is succeed
 	//!  so we could initialized some property or system uniform locations
-	bool InitializeUniforms(PropertyScheme* scheme, int variationIndex);
+	bool InitializeUniforms(ShaderPropertyScheme* scheme, int variationIndex);
 
-	int ReflectUniforms(PropertyScheme* scheme) const;
+	
 
 	// apply default values to a shader uniforms
-	void UploadDefaultValues(PropertyScheme* scheme);
+	void UploadDefaultValues(ShaderPropertyScheme* scheme);
 
 	/**
 	* When one of the uniforms is a texture which is connected to a result of another effect,
@@ -179,14 +177,6 @@ public:
 
 protected:
 
-	// system uniforms
-
-	static const char* gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)];
-	
-	
-	
-	int		FindSystemUniform(const char* uniformName) const; // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
-	bool	IsInternalGLSLUniform(const char* uniformName) const;
 	void	BindSystemUniforms(const PostEffectContextProxy* effectContext) const;
 
 	inline GLint GetSystemUniformLoc(ShaderSystemUniform u) const noexcept {
@@ -197,13 +187,14 @@ protected:
 
 	// variances of post effect
 
-	int mCurrentShader{ 0 }; //!< current variance of a shader
+	int mCurrentVariation{ 0 }; //!< current variance of a shader program
 	bool bIsNeedToUpdatePropertyScheme{ false };
 	bool isActive{ true };
-	std::vector<std::unique_ptr<GLSLShaderProgram>>	mShaders; //!< store a list of all variances
+	// variations of shader program for the given effect
+	std::vector<std::unique_ptr<GLSLShaderProgram>>	mVariations;
 
-	void SetCurrentShader(const int index);
-	int GetCurrentShader() const { return mCurrentShader; }
+	void SetCurrentVariation(const int index);
+	int GetCurrentVariation() const { return mCurrentVariation; }
 	void FreeShaders();
 
 	friend class ShaderPropertyWriter;

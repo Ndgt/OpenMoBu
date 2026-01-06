@@ -433,41 +433,48 @@ bool BlitFBOToFBO(const GLint FBO, const int width, const int height, const GLin
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, defaultFBO );
 
 	// DONE: color attachment1 (may be don't need it at all, use MS version instead!)
-	if (copyColor1)
-	{
-		glReadBuffer(GL_COLOR_ATTACHMENT1);
-		glDrawBuffer(GL_COLOR_ATTACHMENT1);
-		GLenum buffers1[1] = { GL_COLOR_ATTACHMENT1 };
-		glDrawBuffers(1, &buffers1[0] );
+	const bool isDrawToScreen = defaultFBO == 0;
 
-		glBlitFramebuffer(0, 0, width, height, 0, 0, defWidth, defHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		CHECK_GL_ERROR();
-	}
-	if (copyColor2)
+	if (!isDrawToScreen)
 	{
-		glReadBuffer(GL_COLOR_ATTACHMENT2);
-		glDrawBuffer(GL_COLOR_ATTACHMENT2);
-		GLenum buffers1[1] = { GL_COLOR_ATTACHMENT2 };
-		glDrawBuffers(1, &buffers1[0] );
-		// | GL_DEPTH_BUFFER_BIT
-		glBlitFramebuffer(0, 0, width, height, 0, 0, defWidth, defHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		CHECK_GL_ERROR();
-	}
-	if (copyColor3)
-	{
-		glReadBuffer(GL_COLOR_ATTACHMENT3);
-		glDrawBuffer(GL_COLOR_ATTACHMENT3);
-		GLenum buffers1[1] = { GL_COLOR_ATTACHMENT3 };
-		glDrawBuffers(1, &buffers1[0] );
-		// | GL_DEPTH_BUFFER_BIT
-		glBlitFramebuffer(0, 0, width, height, 0, 0, defWidth, defHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		CHECK_GL_ERROR();
-	}
+		if (copyColor1)
+		{
+			glReadBuffer(GL_COLOR_ATTACHMENT1);
+			glDrawBuffer(GL_COLOR_ATTACHMENT1);
+			GLenum buffers1[1] = { GL_COLOR_ATTACHMENT1 };
+			glDrawBuffers(1, &buffers1[0]);
 
+			glBlitFramebuffer(0, 0, width, height, 0, 0, defWidth, defHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			CHECK_GL_ERROR();
+		}
+		if (copyColor2)
+		{
+			glReadBuffer(GL_COLOR_ATTACHMENT2);
+			glDrawBuffer(GL_COLOR_ATTACHMENT2);
+			GLenum buffers1[1] = { GL_COLOR_ATTACHMENT2 };
+			glDrawBuffers(1, &buffers1[0]);
+			// | GL_DEPTH_BUFFER_BIT
+			glBlitFramebuffer(0, 0, width, height, 0, 0, defWidth, defHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			CHECK_GL_ERROR();
+		}
+		if (copyColor3)
+		{
+			glReadBuffer(GL_COLOR_ATTACHMENT3);
+			glDrawBuffer(GL_COLOR_ATTACHMENT3);
+			GLenum buffers1[1] = { GL_COLOR_ATTACHMENT3 };
+			glDrawBuffers(1, &buffers1[0]);
+			// | GL_DEPTH_BUFFER_BIT
+			glBlitFramebuffer(0, 0, width, height, 0, 0, defWidth, defHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			CHECK_GL_ERROR();
+		}
+	}
+	
 	// color attachment0
+	const GLenum outputLayer = isDrawToScreen ? GL_BACK : GL_COLOR_ATTACHMENT0;
+
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
-	GLenum buffers0[1] = { GL_COLOR_ATTACHMENT0 };
+	glDrawBuffer(outputLayer);
+	GLenum buffers0[1] = { outputLayer };
 	glDrawBuffers(1, &buffers0[0] );
 
 	glBlitFramebuffer(0, 0, width, height, 0, 0, defWidth, defHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
@@ -569,7 +576,6 @@ bool BlitFBOToFBOOffset(const GLint FBO, int x, int y, const int width, const in
 
 	glBlitFramebuffer(x, y, x+width, y+height, defX, defY, defX+defWidth, defY+defHeight, mask, GL_NEAREST);
 	CHECK_GL_ERROR();
-
 	return true;
 }
 

@@ -74,7 +74,6 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEva
         }
         
 		PrepareContextParametersForCamera(contextParameters, pane.camera, nPane);
-
         pane.fxContext->Evaluate(pEvaluateInfoIn, pane.camera, contextParameters);
     }
 }
@@ -86,6 +85,7 @@ void PostProcessContextData::Synchronize()
         // reset all pane settings
         ResetPaneSettings();
         SetNeedToResetPaneSettings(false);
+        SetReadyToEvaluate(false);
         return;
 	}
 
@@ -103,8 +103,21 @@ void PostProcessContextData::Synchronize()
         if (!evalPane.data || !evalPane.camera)
             continue;
 
+        if (!mFXContexts[nPane].get())
+        {
+            static const PostEffectContextProxy::Parameters emptyParameters{};
+			mFXContexts[nPane] = std::make_unique<PostEffectContextMoBu>(evalPane.camera, nullptr, evalPane.data, nullptr,
+				&standardEffectsCollection, emptyParameters);
+        }
+
+        mFXContexts[nPane]->SetPostProcessData(evalPane.data);
+
+        evalPane.fxContext = mFXContexts[nPane].get();
+        mRenderPanes[nPane].fxContext = evalPane.fxContext;
+		
+        /*
         // Get or create fx context
-        auto [it, inserted] = mPostFXContextsMap.try_emplace(evalPane.data, nullptr);
+        //auto [it, inserted] = mPostFXContextsMap.try_emplace(evalPane.data, nullptr);
 
         if (inserted || !it->second.get())
         {
@@ -112,15 +125,16 @@ void PostProcessContextData::Synchronize()
             it->second = std::make_unique<PostEffectContextMoBu>(evalPane.camera, nullptr, evalPane.data, nullptr,
 				&standardEffectsCollection, emptyParameters);
         }
-
+        */
         if (HasAnyShadersReloadRequests(evalPane.data))
         {
             isReady = false;
             break;
 		}
 
-        it->second->Synchronize();
-		evalPane.fxContext = it->second.get();
+		evalPane.fxContext->Synchronize();
+        //it->second->Synchronize();
+		//evalPane.fxContext = it->second.get();
 		isReady = true;
     }
 	SetReadyToEvaluate(isReady);
@@ -286,8 +300,6 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, FBTime 
         constexpr bool drawToBack{ false };
         mMainFrameBuffer.PrepForPostProcessing(drawToBack);	// ?!
 
-        CHECK_GL_ERROR();
-
         // this is a hack for Reflection shader (to avoid error overhead on glReadBuffers(GL_BACK) )
 #ifndef OGL_DEBUG
         EmptyGLErrorStack();
@@ -307,16 +319,20 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, FBTime 
             
             // not in schematic view
             if (params.w > 0
+                && params.w <= currBuffers->GetWidth()
                 && currBuffers
-                && params.w == currBuffers->GetWidth()
                 && pane.data)
             {
-                auto iter = mPostFXContextsMap.find(pane.data);
-                if (iter == end(mPostFXContextsMap))
+                //auto iter = mPostFXContextsMap.find(pane.data);
+                //if (iter == end(mPostFXContextsMap))
+                //{
+                //    continue;
+                //}
+                if (pane.fxContext == nullptr)
                 {
                     continue;
-                }
-                PostEffectContextMoBu* fxContext = iter->second.get();
+				}
+                PostEffectContextMoBu* fxContext = pane.fxContext; //iter->second.get();
 
                 // 1. blit part of a main screen
 
@@ -350,7 +366,6 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, FBTime 
 
                 if (isReadyToRender && fxContext->Render(pEvaluateInfoIn, currBuffers))
                 {
-                    CHECK_GL_ERROR();
 
                     // special test for an android device, send preview image by udp
 #if BROADCAST_PREVIEW == 1
@@ -431,8 +446,6 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, FBTime 
         mLastSystemTime = systemTime.GetSecondDouble();
         mLastLocalTime = localTime.GetSecondDouble();
 		mIsTimeInitialized = true;
-
-        CHECK_GL_ERROR();
     }
     
     mEnterId--;
@@ -552,7 +565,6 @@ void PostProcessContextData::PreRenderFirstEntry()
     //
     // resize, alloc shaders, etc.
     LoadShaders();
-
     PrepPaneSettings();
 
     //
@@ -565,22 +577,8 @@ void PostProcessContextData::PreRenderFirstEntry()
         if (!pCamera)
             continue;
 
-        bool paneSharesCamera = false;
-        for (int j = 0; j < mRenderPaneCount; ++j)
-        {
-            if (i != j)
-            {
-                FBCamera *pOtherCamera = pRenderer->GetCameraInPane(j);
-                if (pCamera == pOtherCamera)
-                {
-                    paneSharesCamera = true;
-                    break;
-                }
-            }
-        }
-
-        int w = pCamera->CameraViewportWidth;
-        int h = pCamera->CameraViewportHeight;
+        const int w = pCamera->CameraViewportWidth;
+        const int h = pCamera->CameraViewportHeight;
 
         if (w <= 0 || h <= 0)
             continue;
@@ -590,7 +588,7 @@ void PostProcessContextData::PreRenderFirstEntry()
         bool usePreview = mRenderPanes[i].data->OutputPreview;
         double scaleF = mRenderPanes[i].data->OutputScaleFactor;
 
-		mPaneEffectBuffers[i]->ReSize(w, h, usePreview, scaleF);    
+		mPaneEffectBuffers[i]->ReSize(w, h, usePreview, scaleF);
     }
 
     //
@@ -605,9 +603,11 @@ void PostProcessContextData::PreRenderFirstEntry()
         mMainFrameBuffer.ReSize(mViewerViewport[2], mViewerViewport[3], 1.0, 0, 0);
 
         mMainFrameBuffer.BeginRender();
+
         glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         mMainFrameBuffer.EndRender();
     }
 }
@@ -715,8 +715,9 @@ void PostProcessContextData::ResetPaneSettings()
     {
         mEvaluatePanes[i].Clear();
         mRenderPanes[i].Clear();
+		mFXContexts[i].reset(nullptr);
     }
-    mPostFXContextsMap.clear();
+    //mPostFXContextsMap.clear();
 }
 
 bool PostProcessContextData::PrepPaneSettings()
@@ -727,7 +728,8 @@ bool PostProcessContextData::PrepPaneSettings()
 
     for (int i = 0; i < MAX_PANE_COUNT; ++i)
     {
-        mRenderPanes[i].Clear();
+        mRenderPanes[i].camera = nullptr;
+        mRenderPanes[i].data = nullptr;
     }
     
     // find a global settings (without camera attachments)

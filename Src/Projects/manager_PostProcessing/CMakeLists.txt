@@ -91,8 +91,15 @@ set (POSTEFFECTSCOMMON
     posteffectsingleshader.h
     effectshaderconnections.h
     effectshaderconnections.cxx
+    shaderproperty.h
+    shaderproperty.cxx
+    shaderpropertyscheme.h
+    shaderpropertyscheme.cxx
+    shaderpropertystorage.h
+    shaderpropertystorage.cxx
     shaderpropertyvalue.h
     shaderpropertyvalue.cpp
+    shaderpropertywriter.h
 )
 source_group("PostEffectsCommon" FILES ${POSTEFFECTSCOMMON})
 

@@ -22,7 +22,7 @@ EffectShaderBlurLinearDepth::EffectShaderBlurLinearDepth(FBComponent* uiComponen
 	: PostEffectBufferShader(uiComponent)
 {}
 
-void EffectShaderBlurLinearDepth::OnPopulateProperties(PropertyScheme* scheme)
+void EffectShaderBlurLinearDepth::OnPopulateProperties(ShaderPropertyScheme* scheme)
 {
 	mColorTexture = scheme->AddProperty(ShaderProperty("color", "sampler0"))
 		.SetType(EPropertyType::TEXTURE)

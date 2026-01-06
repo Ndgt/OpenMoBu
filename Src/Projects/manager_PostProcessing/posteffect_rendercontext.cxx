@@ -14,7 +14,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectbase.h"
 
 
-void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::ShaderProperty* shaderProperty, float valueIn)
+void PostEffectRenderContext::OverrideUniform(const ShaderProperty* shaderProperty, float valueIn)
 {
 	if (!shaderProperty)
 		return;
@@ -25,7 +25,7 @@ void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::Sh
 	overrideUniforms.emplace_back(std::move(newValue));
 }
 
-void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::ShaderProperty* shaderProperty, float x, float y)
+void PostEffectRenderContext::OverrideUniform(const ShaderProperty* shaderProperty, float x, float y)
 {
 	if (!shaderProperty)
 		return;
@@ -36,7 +36,7 @@ void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::Sh
 	overrideUniforms.emplace_back(std::move(newValue));
 }
 
-void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::ShaderProperty* shaderProperty, float x, float y, float z, float w)
+void PostEffectRenderContext::OverrideUniform(const ShaderProperty* shaderProperty, float x, float y, float z, float w)
 {
 	if (!shaderProperty)
 		return;
@@ -47,11 +47,11 @@ void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::Sh
 	overrideUniforms.emplace_back(std::move(newValue));
 }
 
-bool PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::PropertyScheme* propertyScheme, const IEffectShaderConnections::ShaderPropertyProxy shaderPropertyProxy, float valueIn)
+bool PostEffectRenderContext::OverrideUniform(const ShaderPropertyScheme* propertyScheme, const ShaderPropertyProxy shaderPropertyProxy, float valueIn)
 {
 	if (!propertyScheme)
 		return false;
-	const IEffectShaderConnections::ShaderProperty* prop = propertyScheme->GetProperty(shaderPropertyProxy);
+	const ShaderProperty* prop = propertyScheme->GetProperty(shaderPropertyProxy);
 	if (!prop)
 		return false;
 	ShaderPropertyValue newValue(prop->GetDefaultValue());
@@ -61,12 +61,12 @@ bool PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::Pr
 	return true;
 }
 
-bool PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::PropertyScheme* propertyScheme, const IEffectShaderConnections::ShaderPropertyProxy shaderPropertyProxy, 
+bool PostEffectRenderContext::OverrideUniform(const ShaderPropertyScheme* propertyScheme, const ShaderPropertyProxy shaderPropertyProxy, 
 	float x, float y)
 {
 	if (!propertyScheme)
 		return false;
-	const IEffectShaderConnections::ShaderProperty* prop = propertyScheme->GetProperty(shaderPropertyProxy);
+	const ShaderProperty* prop = propertyScheme->GetProperty(shaderPropertyProxy);
 	if (!prop)
 		return false;
 	ShaderPropertyValue newValue(prop->GetDefaultValue());
@@ -76,12 +76,12 @@ bool PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::Pr
 	return true;
 }
 
-bool PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::PropertyScheme* propertyScheme, const IEffectShaderConnections::ShaderPropertyProxy shaderPropertyProxy,
+bool PostEffectRenderContext::OverrideUniform(const ShaderPropertyScheme* propertyScheme, const ShaderPropertyProxy shaderPropertyProxy,
 	float x, float y, float z, float w)
 {
 	if (!propertyScheme)
 		return false;
-	const IEffectShaderConnections::ShaderProperty* prop = propertyScheme->GetProperty(shaderPropertyProxy);
+	const ShaderProperty* prop = propertyScheme->GetProperty(shaderPropertyProxy);
 	if (!prop)
 		return false;
 	ShaderPropertyValue newValue(prop->GetDefaultValue());

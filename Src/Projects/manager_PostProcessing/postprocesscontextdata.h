@@ -84,9 +84,10 @@ public:
 	
 	SPaneData	mEvaluatePanes[MAX_PANE_COUNT];	//!< choose a propriate settings according to a pane camera
 	SPaneData	mRenderPanes[MAX_PANE_COUNT];
+	std::array<std::unique_ptr<PostEffectContextMoBu>, MAX_PANE_COUNT> mFXContexts; //!< temporary contexts for each pane
 
 	// for each persistent data object we have a separate post fx context
-	std::unordered_map<PostPersistentData*, std::unique_ptr<PostEffectContextMoBu>>	mPostFXContextsMap;
+	//std::unordered_map<PostPersistentData*, std::unique_ptr<PostEffectContextMoBu>>	mPostFXContextsMap;
 
 	// build-in effects collection to be re-used per effect chain
 	StandardEffectCollection standardEffectsCollection;
