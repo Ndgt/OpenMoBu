@@ -101,8 +101,6 @@ PostEffectUserObject::PostEffectUserObject(const char* pName, HIObject pObject)
 	, mText("")
 {
 	FBClassInit;
-
-	mReloadShaders = false;
 }
 
 void PostEffectUserObject::ActionReloadShaders(HIObject pObject, bool value)
@@ -222,42 +220,42 @@ bool PostEffectUserObject::IsReadyAndActive() const
 
 void PostEffectUserObject::RequestShadersReload()
 {
-	mReloadShaders = true;
-
-	for (int i = 0; i < GetDstCount(); ++i)
+	if (mUserEffect)
 	{
-		FBPlug* dstPlug = GetDst(i);
-
-		if (FBIS(dstPlug, PostPersistentData))
-		{
-			if (PostPersistentData* persistentData = static_cast<PostPersistentData*>(dstPlug))
-			{
-				constexpr const bool isExternal{ true };
-				constexpr const bool propagateToCustomEffects{ false };
-
-				persistentData->RequestShadersReload(isExternal, propagateToCustomEffects);
-			}
-		}
+		mUserEffect->RequestReloadShaders();
 	}
 }
 
-bool PostEffectUserObject::DoReloadShaders(ShaderPropertyStorage::EffectMap* effectPropertiesMap)
+bool PostEffectUserObject::DoReloadShaders()
 {
+	if (mUserEffect)
+	{
+		mUserEffect->Load();
+	}
+
 	for (int i = 0; i < BufferShaders.GetCount(); ++i)
 	{
 		if (FBIS(BufferShaders[i], EffectShaderUserObject))
 		{
 			if (EffectShaderUserObject* UserObject = FBCast<EffectShaderUserObject>(BufferShaders[i]))
 			{
-				if (!UserObject->DoReloadShaders(effectPropertiesMap))
+				if (!UserObject->DoReloadShaders())
 				{
 					return false;
 				}
 			}
 		}
 	}
-	mReloadShaders = false;
 	return true;
+}
+
+bool PostEffectUserObject::IsNeedToReloadShaders() const
+{
+	if (mUserEffect)
+	{
+		return mUserEffect->IsNeedToReloadShaders();
+	}
+	return false;
 }
 
 bool PostEffectUserObject::IsDepthSamplerUsed() const

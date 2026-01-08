@@ -14,7 +14,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "shaderpropertystorage.h"
 #include "posteffectbuffershader.h"
 #include "posteffectcontext.h"
-#include "effectshaderconnections.h"
 
 /**
 * Helper class to write shader property values conveniently

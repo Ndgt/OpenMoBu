@@ -37,8 +37,56 @@ bool PostEffectBase::Load(const char* shadersLocation)
 	return true;
 }
 
+bool PostEffectBase::Load()
+{
+	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
+	{
+		if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
+		{
+			if (!bufferShader->Load())
+				return false;
+		}
+	}
+
+	return true;
+}
+
+void PostEffectBase::RequestReloadShaders()
+{
+
+}
+
+bool PostEffectBase::IsNeedToReloadShaders() const
+{
+	if (GetNumberOfBufferShaders() == 1)
+	{
+		
+	}
+	else
+	{
+		for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
+		{
+			if (const PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
+			{
+				if (!bufferShader->IsActive())
+					return false;
+			}
+		}
+	}
+	
+	return false;
+}
+
 bool PostEffectBase::IsReadyAndActive() const
 {
+	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
+	{
+		if (const PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
+		{
+			if (!bufferShader->IsActive())
+				return false;
+		}
+	}
 	return true;
 }
 

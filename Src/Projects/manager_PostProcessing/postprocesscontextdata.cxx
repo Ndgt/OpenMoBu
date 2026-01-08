@@ -126,7 +126,7 @@ void PostProcessContextData::Synchronize()
 				&standardEffectsCollection, emptyParameters);
         }
         */
-        if (HasAnyShadersReloadRequests(evalPane.data))
+        if (evalPane.fxContext->IsAnyReloadShadersRequested())
         {
             isReady = false;
             break;
@@ -157,15 +157,6 @@ bool PostProcessContextData::IsNeedToResetPaneSettings() const
 void PostProcessContextData::SetNeedToResetPaneSettings(bool reset)
 {
 	isNeedToResetPaneSettings.store(reset, std::memory_order_release);
-}
-
-bool PostProcessContextData::HasAnyShadersReloadRequests(PostPersistentData* data) const
-{
-    return (data->IsNeedToReloadShaders(false) || data->IsExternalReloadRequested());
-}
-void PostProcessContextData::ClearShadersReloadRequests(PostPersistentData* data)
-{
-    data->SetReloadShadersState(false);
 }
 
 void PostProcessContextData::ReloadShaders(PostPersistentData* data, PostEffectContextMoBu* fxContext, 
@@ -282,6 +273,109 @@ void PostProcessContextData::PrepareContextParametersForCamera(PostEffectContext
 	contextParametersOut.isSkipFrame = isSkipFrame;
 }
 
+void PostProcessContextData::RenderPane(FBEvaluateInfo* pEvaluateInfoIn, SPaneData& pane, PostEffectBuffers* paneBuffers, PostEffectContextProxy::Parameters& params)
+{
+    if (!pane.IsValid() || !paneBuffers)
+        return;
+
+    FBCamera* pCamera = pane.camera;
+    PostEffectContextMoBu* fxContext = pane.fxContext;
+
+    PrepareContextParametersForCamera(params, pCamera, pane.paneIndex);
+    
+    // not in schematic view
+    if (params.w <= 0 || params.w > paneBuffers->GetWidth())
+		return;
+
+	// 1. blit a pane area of a main buffer into a pane buffer
+
+    DoubleFramebufferRequestScope doubleFramebufferRequest(fxContext->GetFXChain(), paneBuffers);
+
+    if (!mMainFrameBuffer.isFboAttached())
+    {
+        BlitFBOToFBOOffset(mMainFrameBuffer.GetFinalFBO(), params.x, params.y, params.w, params.h, 0,
+            doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
+            true, false, false, false); // copy depth and no any other attachments
+    }
+    else
+    {
+        BlitFBOToFBOOffset(mMainFrameBuffer.GetAttachedFBO(), params.x, params.y, params.w, params.h, 0,
+            doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
+            true, false, false, false); // copy depth and no any other attachments
+    }
+
+
+    // 2. process it
+
+    if (!IsReadyToEvaluate() && fxContext->IsAnyReloadShadersRequested())
+    {
+        ReloadShaders(pane.data, fxContext, pEvaluateInfoIn, pCamera, params);
+    }
+
+    const bool isReadyToRender = standardEffectsCollection.IsOk()
+                                && fxContext->IsReadyToRender()
+                                && !fxContext->IsAnyReloadShadersRequested();
+
+    if (!isReadyToRender)
+		return;
+
+    if (!fxContext->Render(pEvaluateInfoIn, paneBuffers))
+        return;
+
+    // special test for an android device, send preview image by udp
+#if BROADCAST_PREVIEW == 1
+    if (true == mSendPreview)
+    {
+        SendPreview(paneBuffers);
+        mPaneSettings[nPane]->IsSynced = mIsSynced;
+        if (mIsSynced)
+        {
+            mPaneSettings[nPane]->DeviceAddress = FBVector4d((double)mSendAddress.GetA(), (double)mSendAddress.GetB(),
+                (double)mSendAddress.GetC(), (double)mSendAddress.GetD());
+            mPaneSettings[nPane]->DevicePort = mSendAddress.GetPort();
+        }
+
+    }
+#endif
+    // 2.5 HUDs
+
+    if (true == pane.data->DrawHUDLayer)
+    {
+        // effect should be ended up with writing into target
+        doubleFramebufferRequest->Bind();
+
+        DrawHUD(0, 0, params.w, params.h, mMainFrameBuffer.GetWidth(), mMainFrameBuffer.GetHeight());
+
+        doubleFramebufferRequest->UnBind();
+    }
+
+    // 3. blit back a pane area into a full main buffer
+
+    if (!mMainFrameBuffer.isFboAttached())
+    {
+        BlitFBOToFBOOffset(doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
+            mMainFrameBuffer.GetFinalFBO(), params.x, params.y, params.w, params.h, 0,
+            false, false, false, false); // don't copy depth or any other color attachment
+    }
+    else
+    {
+        BlitFBOToFBOOffset(doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
+            mMainFrameBuffer.GetAttachedFBO(), params.x, params.y, params.w, params.h, 0,
+            false, false, false, false); // don't copy depth or any other color attachment
+    }
+}
+
+void PostProcessContextData::BuffersPoolCollection()
+{
+    for (size_t nPane = 0; nPane < mPaneEffectBuffers.size(); ++nPane)
+    {
+        if (mPaneEffectBuffers[nPane].get())
+        {
+            mPaneEffectBuffers[nPane]->OnFrameRendered();
+        }
+    }
+}
+
 bool PostProcessContextData::RenderAfterRender(bool processCompositions, FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn)
 {
     bool lStatus = false;
@@ -310,112 +404,10 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, FBTime 
         for (int nPane = 0; nPane < mRenderPaneCount; ++nPane)
         {
             SPaneData& pane = mRenderPanes[nPane];
-            FBCamera* pCamera = pane.camera;
-            if (!pCamera)
-                continue;
-
-			PrepareContextParametersForCamera(params, pCamera, nPane);
-            PostEffectBuffers *currBuffers = mPaneEffectBuffers[nPane].get();
-            
-            // not in schematic view
-            if (params.w > 0
-                && params.w <= currBuffers->GetWidth()
-                && currBuffers
-                && pane.data)
-            {
-                //auto iter = mPostFXContextsMap.find(pane.data);
-                //if (iter == end(mPostFXContextsMap))
-                //{
-                //    continue;
-                //}
-                if (pane.fxContext == nullptr)
-                {
-                    continue;
-				}
-                PostEffectContextMoBu* fxContext = pane.fxContext; //iter->second.get();
-
-                // 1. blit part of a main screen
-
-                DoubleFramebufferRequestScope doubleFramebufferRequest(fxContext->GetFXChain(), currBuffers);
-
-                if (!mMainFrameBuffer.isFboAttached())
-                {
-                    BlitFBOToFBOOffset(mMainFrameBuffer.GetFinalFBO(), params.x, params.y, params.w, params.h, 0,
-                        doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
-                        true, false, false, false); // copy depth and no any other attachments
-                }
-                else
-                {
-                    BlitFBOToFBOOffset(mMainFrameBuffer.GetAttachedFBO(), params.x, params.y, params.w, params.h, 0,
-                        doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
-                        true, false, false, false); // copy depth and no any other attachments
-                }
-
-
-                // 2. process it
-
-                if (!IsReadyToEvaluate() && HasAnyShadersReloadRequests(pane.data))
-                {
-					ReloadShaders(pane.data, fxContext, pEvaluateInfoIn, pCamera, params);
-                    ClearShadersReloadRequests(pane.data);
-                }
-
-                bool isReadyToRender = true;
-                isReadyToRender &= standardEffectsCollection.IsOk();
-                isReadyToRender &= fxContext->IsReadyToRender();
-
-                if (isReadyToRender && fxContext->Render(pEvaluateInfoIn, currBuffers))
-                {
-
-                    // special test for an android device, send preview image by udp
-#if BROADCAST_PREVIEW == 1
-                    if (true == mSendPreview)
-                    {
-                        SendPreview(currBuffers);
-                        mPaneSettings[nPane]->IsSynced = mIsSynced;
-                        if (mIsSynced)
-                        {
-                            mPaneSettings[nPane]->DeviceAddress = FBVector4d((double)mSendAddress.GetA(), (double)mSendAddress.GetB(),
-                                (double)mSendAddress.GetC(), (double)mSendAddress.GetD());
-                            mPaneSettings[nPane]->DevicePort = mSendAddress.GetPort();
-                        }
-
-                    }
-#endif
-                    // 2.5 HUDs
-
-                    if (true == pane.data->DrawHUDLayer)
-                    {
-                        // effect should be ended up with writing into target
-                        doubleFramebufferRequest->Bind();
-                        
-                        DrawHUD(0, 0, params.w, params.h, mMainFrameBuffer.GetWidth(), mMainFrameBuffer.GetHeight());
-
-                        doubleFramebufferRequest->UnBind();
-                    }
-
-                    // 3. blit back a part of a screen
-
-                    if (!mMainFrameBuffer.isFboAttached())
-                    {
-                        BlitFBOToFBOOffset(doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
-                            mMainFrameBuffer.GetFinalFBO(), params.x, params.y, params.w, params.h, 0,
-                            false, false, false, false); // don't copy depth or any other color attachment
-                    }
-                    else
-                    {
-                        BlitFBOToFBOOffset(doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
-                            mMainFrameBuffer.GetAttachedFBO(), params.x, params.y, params.w, params.h, 0,
-                            false, false, false, false); // don't copy depth or any other color attachment
-                    }
-                }
-            }
-
-            if (currBuffers)
-            {
-                currBuffers->OnFrameRendered();
-            }
+			RenderPane(pEvaluateInfoIn, pane, mPaneEffectBuffers[nPane].get(), params);
         }
+
+		BuffersPoolCollection();
 
         if (mAttachedFBO[mEnterId - 1] > 0)
         {

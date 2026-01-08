@@ -11,7 +11,8 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include <windows.h>
+//#include <windows.h>
+//#include <minwindef.h>
 #include "FileUtils.h"
 #include <filesystem>
 
@@ -29,6 +30,9 @@ void SetCurrentFileOpenPath(const char* filepath)
 
 bool IsFileExists ( const char* filename ) 
 {	
+	std::filesystem::path path = filename;
+	return std::filesystem::exists(path);
+	/*
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hFind;
 
@@ -42,12 +46,14 @@ bool IsFileExists ( const char* filename )
 		FindClose(hFind);
 		return true;
 	}
+	*/
 }
 
 ////////////////////////////////////////////////////////////
 
 bool FindEffectLocation(const char *effect, char* outPath, const int outPathLength)
 {
+	constexpr const int MAX_PATH = 260;
 	char buffer[MAX_PATH];
 
 	auto fn_checkLocation = [&buffer](const char* location, const char* fileName) -> bool
@@ -135,6 +141,7 @@ bool FindEffectLocation(const char *effect, char* outPath, const int outPathLeng
 
 bool FindEffectLocation(std::function<bool(const char* testPath)> const& checkLocationFn, char* outPath, const int outPathLength)
 {
+	constexpr const int MAX_PATH = 260;
 	auto fn_copyLocation = [](const char* location, char* outPath, const int maxPath)
 		{
 			const int len = std::min(MAX_PATH, maxPath);

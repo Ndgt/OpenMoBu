@@ -188,7 +188,7 @@ public: // PROPERTIES
 public:
 
 	bool RequestShadersReload();
-	bool DoReloadShaders(ShaderPropertyStorage::EffectMap* effectPropertiesMap);
+	bool DoReloadShaders();
 	bool DoOpenFolderWithShader();
 	bool DoExportShaderScheme();
 
@@ -204,14 +204,10 @@ public:
 	// recalculate width and height based on shader resolution option
 	void RecalculateWidthAndHeight(int& w, int& h) const;
 
-	
-
 protected:
 
 	friend class ToolPostProcessing;
 	friend class UserBufferShader;
-
-	FBSystem			mSystem;
 
     FBString			mText;
 	bool				mReloadShaders{ false };

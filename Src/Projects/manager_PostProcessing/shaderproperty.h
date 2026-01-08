@@ -67,8 +67,7 @@ struct MANAGER_POSTPROCESSING_API ShaderProperty
 	void SetUniformNameHash(uint32_t hashIn);
 	inline const char* GetUniformName() const noexcept;
 	inline uint32_t GetUniformNameHash() const;
-	//inline char* GetUniformNameAccess() { return uniformName; }
-
+	
 	void SetLocation(GLint locationIN) {
 		mDefaultValue.SetLocation(locationIN);
 	}
@@ -122,6 +121,11 @@ public:
 
 	void SetIndexInArray(int32_t indexInArrayIn) { indexInArray = indexInArrayIn; }
 	int32_t GetIndexInArray() const { return indexInArray; }
+
+public:
+
+	static FBPropertyType ShaderPropertyToFBPropertyType(const ShaderProperty& prop);
+	static EPropertyType FBPropertyToShaderPropertyType(const FBPropertyType& fbType);
 
 private:
 		

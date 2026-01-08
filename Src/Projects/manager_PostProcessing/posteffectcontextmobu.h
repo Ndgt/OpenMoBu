@@ -66,6 +66,8 @@ public:
 
 	bool ReloadShaders();
 
+	bool IsAnyReloadShadersRequested() const;
+
 	// check if we have needed connected data
 	bool IsReadyToRender() const;
 

@@ -360,8 +360,7 @@ int ShaderPropertyScheme::ReflectUniforms(const GLuint programId, bool doPopulat
 	using namespace _ShaderPropertySchemeInternal;
 
 	ResetSystemUniformLocations();
-	// properties could contain manually initialized ones
-	//ClearGeneratedByUniformProperties();
+	
 	if (!programId)
 		return 0;
 

@@ -118,6 +118,18 @@ bool PostEffectContextMoBu::IsReadyToRender() const
 	return effectChain.IsReadyToRender();
 }
 
+bool PostEffectContextMoBu::IsAnyReloadShadersRequested() const
+{
+	if (!standardEffects || !postProcessData)
+	{
+		return false;
+	}
+
+	return (standardEffects->IsNeedToReloadShaders()
+		|| postProcessData->IsNeedToReloadShaders(false)
+		|| postProcessData->IsExternalReloadRequested());
+}
+
 bool PostEffectContextMoBu::ReloadShaders()
 {
 	if (!standardEffects || !postProcessData)
@@ -127,7 +139,8 @@ bool PostEffectContextMoBu::ReloadShaders()
 
 	// standard effects
 	constexpr const bool propagateToUserEffects = false;
-	if (postProcessData->IsNeedToReloadShaders(propagateToUserEffects))
+	if (postProcessData->IsNeedToReloadShaders(propagateToUserEffects)
+		|| standardEffects->IsNeedToReloadShaders())
 	{
 		standardEffects->ChangeContext();
 		if (!standardEffects->ReloadShaders())
@@ -148,7 +161,7 @@ bool PostEffectContextMoBu::ReloadShaders()
 			{
 				if (userEffect->IsNeedToReloadShaders())
 				{
-					if (!userEffect->DoReloadShaders(&shaderPropertyStorage.GetReadEffectMap()))
+					if (!userEffect->DoReloadShaders())
 					{
 						return false;
 					}

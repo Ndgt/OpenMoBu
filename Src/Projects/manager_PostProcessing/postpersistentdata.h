@@ -535,7 +535,10 @@ public:
 	void RequestShadersReload(bool isExternal = true, bool doPropagateToUserEffects = false);
 	bool IsNeedToReloadShaders(bool doPropagateToUserEffects=true);
 	bool IsExternalReloadRequested() const;
-	void SetReloadShadersState(bool state, bool doPropagateToUserEffects=true);
+	void DoReloadShaders();
+
+
+
 	void ClearReloadFlags();
 
 	void SetPreviewTextureId(unsigned int id, double ratio, 
@@ -562,6 +565,8 @@ public:
 	PostEffectUserObject* GetActiveUserEffectObject(const int index);
 	bool HasAnyUserEffectWithReloadRequest();
 
+	std::vector<PostEffectUserObject*> GetAllConnectedUserEffects();
+
 protected:
 
 	friend class ToolPostProcessing;
@@ -581,6 +586,8 @@ protected:
 	void		LoadFarValueFromConfig();
 
 	void ComputePointInFront(FBVector3d &v);
+
+	void ProcessSiblingsOfUserEffect(std::vector<PostEffectUserObject*>& effectsOut, PostEffectUserObject* userEffectIn);
 };
 
 #endif /* __POST_PROCESSING_DATA_H__ */

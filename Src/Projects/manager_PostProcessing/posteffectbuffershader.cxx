@@ -15,6 +15,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "shaderpropertystorage.h"
 #include "mobu_logging.h"
 #include "hashUtils.h"
+#include "FileUtils.h"
 #include "posteffect_shader_userobject.h"
 
 
@@ -147,6 +148,59 @@ bool PostEffectBufferShader::Load(const char* shadersLocation)
 	return true;
 }
 
+bool PostEffectBufferShader::CheckShadersPath(const char* path) const
+{
+	if (GetNumberOfVariations() <= 0)
+	{
+		return false;
+	}
+
+	const char* test_shaders[] = {
+		GetVertexFname(0),
+		GetFragmentFname(0)
+	};
+	LOGV("[CheckShadersPath] testing path %s\n", path);
+	for (const char* shader_path : test_shaders)
+	{
+		FBString full_path(path, shader_path);
+
+		if (!IsFileExists(full_path))
+		{
+			LOGV("[CheckShadersPath] %s is not found in the %s shader \n", shader_path, GetName());
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool PostEffectBufferShader::Load()
+{
+	if (GetNumberOfVariations() <= 0)
+	{
+		return false;
+	}
+
+	constexpr int PATH_LENGTH = 260;
+	char shadersPath[PATH_LENGTH]{ 0 };
+	if (!FindEffectLocation(std::bind(&PostEffectBufferShader::CheckShadersPath, this, std::placeholders::_1), 
+		shadersPath, PATH_LENGTH))
+	{
+		LOGE("[PostProcessing] Failed to find shaders location!\n");
+		return false;
+	}
+
+	for (int i = 0; i < GetNumberOfVariations(); ++i)
+	{
+		FBString vertex_path(shadersPath, GetVertexFname(i));
+		FBString fragment_path(shadersPath, GetFragmentFname(i));
+
+		if (!Load(i, vertex_path, fragment_path))
+			return false;
+	}
+	return true;
+}
+
 bool EffectShaderPropertyProcessor::CollectUIValues(FBComponent* component, PostEffectContextProxy* effectContext, const PostEffectBufferShader* effectShader, int maskIndex)
 {
 	const ShaderPropertyScheme* propertyScheme = effectShader->GetPropertySchemePtr();
@@ -219,34 +273,6 @@ bool EffectShaderPropertyProcessor::CollectUIValues(FBComponent* component, Post
 	*/
 
 	return effectShader->OnCollectUI(effectContext, maskIndex);
-}
-
-bool PostEffectBufferShader::ReloadPropertyShaders(ShaderPropertyStorage::EffectMap* effectMap)
-{
-	bIsNeedToUpdatePropertyScheme = true;
-
-	const uint32_t effectNameHash = GetNameHash();
-
-	auto iter = effectMap->find(effectNameHash);
-	if (iter != effectMap->end())
-	{
-		for (const ShaderPropertyValue& value : iter->second)
-		{
-			if (value.GetType() == EPropertyType::SHADER_USER_OBJECT
-				&& value.shaderUserObject)
-			{
-				if (value.shaderUserObject->IsNeedToReloadShaders())
-				{
-					if (!value.shaderUserObject->DoReloadShaders(effectMap))
-					{
-						return false;
-					}
-				}
-			}
-		}
-	}
-
-	return true;
 }
 
 int PostEffectBufferShader::GetNumberOfSourceShaders(const PostEffectContextProxy* effectContext) const
@@ -454,7 +480,7 @@ void PostEffectBufferShader::PreRender(PostEffectRenderContext& renderContext, P
 
 		if (userObject->IsNeedToReloadShaders())
 		{
-			if (!userObject->DoReloadShaders(effectContext->GetEffectPropertyMap()))
+			if (!userObject->DoReloadShaders())
 			{
 				continue;
 			}

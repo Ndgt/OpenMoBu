@@ -126,8 +126,6 @@ PostPersistentData::PostPersistentData(const char* pName, HIObject pObject)
 	, mText("")
 {
     FBClassInit;
-
-	SetReloadShadersState(false);
 }
 
 void PostPersistentData::ActionReloadShaders(HIObject pObject, bool value)
@@ -1178,14 +1176,8 @@ bool PostPersistentData::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObjectStore pS
 
 void PostPersistentData::RequestShadersReload(bool isExternal, bool doPropagateToUserEffects)
 {
-	if (isExternal)
-	{
-		mReloadExternal = true;
-	}
-	else
-	{
-		SetReloadShadersState(doPropagateToUserEffects);
-	}
+	mReloadShaders = true;
+	mReloadExternal = isExternal;
 }
 
 void PostPersistentData::DoDebugFarDist()
@@ -1762,24 +1754,32 @@ bool PostPersistentData::IsExternalReloadRequested() const
 	return mReloadExternal;
 }
 
-void PostPersistentData::SetReloadShadersState(bool state, bool doPropagateToUserEffects)
-{ 
-	mReloadShaders = state; 
-	if (doPropagateToUserEffects)
+void PostPersistentData::DoReloadShaders()
+{
+	mReloadShaders = false;
+
+	if (mReloadExternal)
 	{
-		mReloadExternal = state;
+		mReloadExternal = false;
+
 		for (int i = 0; i < UserEffects.GetCount(); ++i)
 		{
-			if (FBIS(UserEffects[i], PostEffectUserObject))
+			FBComponent* component = UserEffects.GetAt(i);
+			PostEffectUserObject* userEffect = FBCast<PostEffectUserObject>(component);
+			if (userEffect)
 			{
-				if (PostEffectUserObject* userObject = FBCast<PostEffectUserObject>(UserEffects[i]))
+				if (userEffect->IsNeedToReloadShaders())
 				{
-					userObject->SetReloadShadersState(state);
+					if (!userEffect->DoReloadShaders())
+					{
+						return;
+					}
 				}
 			}
 		}
 	}
 }
+
 
 void PostPersistentData::ClearReloadFlags()
 {
@@ -1801,6 +1801,44 @@ bool PostPersistentData::HasAnyUserEffectWithReloadRequest()
 		}
 	}
 	return false;
+}
+
+std::vector<PostEffectUserObject*> PostPersistentData::GetAllConnectedUserEffects()
+{
+	std::vector<PostEffectUserObject*> userEffects;
+	for (int i = 0; i < UserEffects.GetCount(); ++i)
+	{
+		if (FBIS(UserEffects[i], PostEffectUserObject))
+		{
+			PostEffectUserObject* userObject = FBCast<PostEffectUserObject>(UserEffects[i]);
+			if (userObject)
+			{
+				userEffects.push_back(userObject);
+				ProcessSiblingsOfUserEffect(userEffects, userObject);
+			}
+		}
+	}
+	return userEffects;
+}
+
+void PostPersistentData::ProcessSiblingsOfUserEffect(std::vector<PostEffectUserObject*>& effectsOut, PostEffectUserObject* userEffectIn)
+{
+	if (!userEffectIn)
+		return;
+
+	for (int i=0; i<userEffectIn->GetDstCount(); ++i)
+	{
+		FBPlug* dstPlug = userEffectIn->GetDst(i);
+		if (dstPlug && FBIS(dstPlug, PostEffectUserObject))
+		{
+			PostEffectUserObject* siblingEffect = FBCast<PostEffectUserObject>(dstPlug);
+			if (siblingEffect)
+			{
+				effectsOut.push_back(siblingEffect);
+				ProcessSiblingsOfUserEffect(effectsOut, siblingEffect);
+			}
+		}
+	}
 }
 
 PostEffectBase* PostPersistentData::GetActiveUserEffect(const int index)

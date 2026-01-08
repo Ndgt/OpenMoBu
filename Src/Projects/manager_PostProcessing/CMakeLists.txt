@@ -89,8 +89,6 @@ set (POSTEFFECTSCOMMON
     posteffectbuffershader.h
     posteffectbuffershader.cxx
     posteffectsingleshader.h
-    effectshaderconnections.h
-    effectshaderconnections.cxx
     shaderproperty.h
     shaderproperty.cxx
     shaderpropertyscheme.h

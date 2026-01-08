@@ -9,7 +9,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 */
 
-#include "effectshaderconnections.h"
 #include "posteffect_rendercontext.h"
 #include <memory>
 #include <unordered_map>
@@ -39,7 +38,7 @@ private:
 /// effect with one or more gpu shaders (number of variations, mostly 1)
 /// to process the effects chain input image with a defined number of passes
 /// </summary>
-class PostEffectBufferShader : public IEffectShaderConnections
+class PostEffectBufferShader
 {
 public:
 
@@ -78,11 +77,11 @@ public:
 
 	/// <summary>
 	/// use \ref GetVertexFname and \ref GetFragmentFname to load a shader variance
-	///  the given shaderLocation is used to make an absolute path
+	///  the shaderLocation is calculated from system paths, scene current path
 	/// </summary>
 	bool Load(const char* shaderLocation);
 
-	
+	bool Load();
 
 	//! get a pointer to a (current variance) shader program
 	GLSLShaderProgram* GetShaderPtr();
@@ -119,6 +118,9 @@ public:
 	// shader version, increments on every shader reload
 	int GetVersion() const { return version; }
 
+protected:
+
+	bool CheckShadersPath(const char* path) const;
 
 protected:
 	friend class EffectShaderPropertyProcessor;
@@ -142,23 +144,14 @@ public:
 	
 	const ShaderPropertyScheme* GetPropertySchemePtr() const { return mRenderPropertyScheme.get(); }
 
-	//
-	// IEffectShaderConnections
-	//virtual ShaderProperty& AddProperty(const ShaderProperty& property) override;
-	//virtual ShaderProperty& AddProperty(ShaderProperty&& property) override;
-
-	virtual int GetNumberOfProperties() const override;
-	virtual const ShaderProperty& GetProperty(int index) const override;
-	virtual const ShaderProperty* FindProperty(const std::string_view name) const override;
+	virtual int GetNumberOfProperties() const;
+	virtual const ShaderProperty& GetProperty(int index) const;
+	virtual const ShaderProperty* FindProperty(const std::string_view name) const;
 	const ShaderProperty* FindPropertyByUniformName(const std::string_view name) const;
-
-	//void ClearGeneratedByUniformProperties();
 
 	//! is being called after \ref Load is succeed
 	//!  so we could initialized some property or system uniform locations
 	bool InitializeUniforms(ShaderPropertyScheme* scheme, int variationIndex);
-
-	
 
 	// apply default values to a shader uniforms
 	void UploadDefaultValues(ShaderPropertyScheme* scheme);
@@ -170,10 +163,6 @@ public:
 	*/
 	void AutoUploadUniforms(const PostEffectRenderContext& renderContext,
 		const PostEffectContextProxy* effectContext, bool skipTextureProperties);
-
-	// look for a connected input effect shaders and reload them if needed
-	bool ReloadPropertyShaders(ShaderPropertyStorage::EffectMap* effectMap);
-
 
 protected:
 
@@ -194,7 +183,7 @@ protected:
 	std::vector<std::unique_ptr<GLSLShaderProgram>>	mVariations;
 
 	void SetCurrentVariation(const int index);
-	int GetCurrentVariation() const { return mCurrentVariation; }
+	inline int GetCurrentVariation() const noexcept { return mCurrentVariation; }
 	void FreeShaders();
 
 	friend class ShaderPropertyWriter;

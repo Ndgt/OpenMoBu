@@ -106,8 +106,6 @@ public:
 
 	virtual bool PlugNotify(FBConnectionAction pAction, FBPlug* pThis, int pIndex, FBPlug* pPlug, FBConnectionType pConnectionType, FBPlug* pNewPlug) override;
 
-	void CopyValues(EffectShaderUserObject* pOther);
-
 public: // PROPERTIES
 
 	FBPropertyInt				UniqueClassId;
@@ -133,21 +131,17 @@ public:
 	bool IsReadyAndActive() const;
 
 	void RequestShadersReload();
-	bool DoReloadShaders(ShaderPropertyStorage::EffectMap* effectPropertiesMap);
+	bool DoReloadShaders();
 
-	bool IsNeedToReloadShaders() const { return mReloadShaders; }
-	void SetReloadShadersState(bool state) { mReloadShaders = state; }
-
+	bool IsNeedToReloadShaders() const;
+	
 	UserEffect* GetUserEffectPtr() const { return mUserEffect.get(); }
 
 protected:
 
-	
 	FBSystem			mSystem;
-
 	FBString			mText;
-	bool				mReloadShaders{ false };
-
+	
 	std::unique_ptr<UserEffect>		mUserEffect;
 	
 	bool IsDepthSamplerUsed() const;

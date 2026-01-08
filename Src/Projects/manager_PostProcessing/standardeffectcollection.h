@@ -67,6 +67,8 @@ public:
 	// returns true if all shaders are loaded and compiled, ready to use
 	bool IsOk() const;
 
+	bool IsNeedToReloadShaders() const { return mNeedReloadShaders; }
+
 	bool LoadShaders();
 	void FreeShaders();
 

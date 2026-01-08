@@ -73,6 +73,12 @@ public:
 		PostEffectContextMoBu* fxContext{ nullptr };
 		PostPersistentData* data{ nullptr };
 		FBCamera* camera{ nullptr };
+		int paneIndex{ -1 };
+
+		bool IsValid() const
+		{
+			return (fxContext != nullptr) && (data != nullptr) && (camera != nullptr);
+		}
 
 		void Clear()
 		{
@@ -117,8 +123,7 @@ public:
 	bool IsNeedToResetPaneSettings() const;
 	void SetNeedToResetPaneSettings(bool reset);
 
-	bool HasAnyShadersReloadRequests(PostPersistentData* data) const;
-	void ClearShadersReloadRequests(PostPersistentData* data);
+	
 	void ReloadShaders(PostPersistentData* data, PostEffectContextMoBu* fxContext,
 		FBEvaluateInfo* pEvaluateInfoIn, FBCamera* pCamera, const PostEffectContextProxy::Parameters& contextParameters);
 
@@ -136,6 +141,9 @@ private:
 
 	void PrepareContextParameters(PostEffectContextProxy::Parameters& contextParametersOut, FBTime systemTime, FBTime localTime) const;
 	void PrepareContextParametersForCamera(PostEffectContextProxy::Parameters& contextParametersOut, FBCamera* pCamera, int nPane) const;
+
+	void RenderPane(FBEvaluateInfo* pEvaluateInfoIn, SPaneData& pane, PostEffectBuffers* paneBuffers, PostEffectContextProxy::Parameters& params);
+	void BuffersPoolCollection();
 
 	// once we load file, we should reset pane user object pointers 
 	// and wait for next PrepPaneSettings call

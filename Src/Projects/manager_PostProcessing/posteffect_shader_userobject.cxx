@@ -241,7 +241,7 @@ bool EffectShaderUserObject::CalculateShaderFilePaths(FBString& vertexShaderPath
 	return true;
 }
 
-bool EffectShaderUserObject::DoReloadShaders(ShaderPropertyStorage::EffectMap* effectMap)
+bool EffectShaderUserObject::DoReloadShaders()
 {
 	FBString vertexPath, fragmentPath;
 	CalculateShaderFilePaths(vertexPath, fragmentPath);
@@ -255,11 +255,25 @@ bool EffectShaderUserObject::DoReloadShaders(ShaderPropertyStorage::EffectMap* e
 	}
 	
 	// reload connected input buffers
-	if (PostEffectBufferShader* bufferShader = GetUserShaderPtr())
+	for (int i = 0; i < GetSrcCount(); ++i)
 	{
-		if (!bufferShader->ReloadPropertyShaders(effectMap))
-			return false;
+		FBPlug* srcPlug = GetSrc(i);
+		if (FBIS(srcPlug, EffectShaderUserObject))
+		{
+			if (EffectShaderUserObject* effectShaderObj = static_cast<EffectShaderUserObject*>(srcPlug))
+			{
+				effectShaderObj->DoReloadShaders();
+			}
+		}
+		else if (FBIS(srcPlug, PostEffectUserObject))
+		{
+			if (PostEffectUserObject* effectObj = static_cast<PostEffectUserObject*>(srcPlug))
+			{
+				effectObj->DoReloadShaders();
+			}
+		}
 	}
+
 	SetReloadShadersState(false);
 	return true;
 }
@@ -471,7 +485,7 @@ FBProperty* EffectShaderUserObject::MakePropertySampler(const ShaderProperty& pr
 FBProperty* EffectShaderUserObject::GetOrMakeProperty(const ShaderProperty& prop)
 {
 	FBProperty* fbProperty = PropertyList.Find(prop.GetName());
-	const FBPropertyType fbPropertyType = IEffectShaderConnections::ShaderPropertyToFBPropertyType(prop);
+	const FBPropertyType fbPropertyType = ShaderProperty::ShaderPropertyToFBPropertyType(prop);
 
 	// NOTE: check not only user property, but also a property type !
 	if (!fbProperty || fbProperty->GetPropertyType() != fbPropertyType)

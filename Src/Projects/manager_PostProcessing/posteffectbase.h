@@ -85,7 +85,12 @@ public:
 	//! an effect public name
 	virtual const char* GetName() const abstract;
 
+	// load shaders
 	virtual bool Load(const char* shaderLocation);
+	bool Load();
+
+	void RequestReloadShaders();
+	bool IsNeedToReloadShaders() const;
 
 	virtual bool IsReadyAndActive() const;
 
