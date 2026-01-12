@@ -14,7 +14,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <vector>
 #include <limits>
 
-#include "posteffect_userobject.h"
+#include "posteffect_shader_userobject.h"
 
 // custom assets inserting
 
@@ -238,6 +238,7 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	
 	AddPropertyView("User Effects", "");
 
+	AddPropertyView("Use User Effects", "");
 	AddPropertyView("SSAO", "");
 	AddPropertyView("Motion Blur", "");
 	AddPropertyView("Depth Of Field", "");
@@ -515,6 +516,7 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, GenerateMipMaps, "Generate MipMaps", nullptr, nullptr);
 	FBPropertyPublish(this, ResetToDefault, "Reset To Default", nullptr, ActionResetToDefault);
 
+	FBPropertyPublish(this, UseUserEffects, "Use User Effects", nullptr, nullptr);
 	FBPropertyPublish(this, UserEffects, "User Effects", nullptr, nullptr);
 
 	FBPropertyPublish(this, AutoClipFromHUD, "Auto Clip From HUD", nullptr, nullptr);
@@ -896,6 +898,7 @@ void PostPersistentData::DefaultValues()
 	DrawHUDLayer = false;
 	GenerateMipMaps = false;
 	UseCameraObject = true;
+	UseUserEffects = true;
 
 	// global masking properties
 	UseCompositeMasking = true;
@@ -1726,12 +1729,15 @@ int PostPersistentData::GetGlobalMaskIndex() const
 int PostPersistentData::GetNumberOfActiveUserEffects()
 {
 	int count = 0;
+	if (!UseUserEffects)
+		return count;
+
 	for (int i = 0; i < UserEffects.GetCount(); ++i)
 	{
-		if (FBIS(UserEffects[i], PostEffectUserObject))
+		if (FBIS(UserEffects[i], EffectShaderUserObject))
 		{
-			PostEffectUserObject* UserObject = FBCast<PostEffectUserObject>(UserEffects[i]);
-			if (UserObject && UserObject->Active && UserObject->GetUserEffectPtr())
+			EffectShaderUserObject* UserObject = FBCast<EffectShaderUserObject>(UserEffects[i]);
+			if (UserObject && UserObject->Active && UserObject->GetUserShaderPtr())
 			{
 				count += 1;
 			}
@@ -1765,7 +1771,7 @@ void PostPersistentData::DoReloadShaders()
 		for (int i = 0; i < UserEffects.GetCount(); ++i)
 		{
 			FBComponent* component = UserEffects.GetAt(i);
-			PostEffectUserObject* userEffect = FBCast<PostEffectUserObject>(component);
+			EffectShaderUserObject* userEffect = FBCast<EffectShaderUserObject>(component);
 			if (userEffect)
 			{
 				if (userEffect->IsNeedToReloadShaders())
@@ -1780,20 +1786,13 @@ void PostPersistentData::DoReloadShaders()
 	}
 }
 
-
-void PostPersistentData::ClearReloadFlags()
-{
-	mReloadExternal = false;
-	mReloadShaders = false;
-}
-
 bool PostPersistentData::HasAnyUserEffectWithReloadRequest()
 {
 	for (int i = 0; i < UserEffects.GetCount(); ++i)
 	{
-		if (FBIS(UserEffects[i], PostEffectUserObject))
+		if (FBIS(UserEffects[i], EffectShaderUserObject))
 		{
-			PostEffectUserObject* UserObject = FBCast<PostEffectUserObject>(UserEffects[i]);
+			EffectShaderUserObject* UserObject = FBCast<EffectShaderUserObject>(UserEffects[i]);
 			if (UserObject && UserObject->Active && UserObject->IsNeedToReloadShaders())
 			{
 				return true;
@@ -1803,14 +1802,17 @@ bool PostPersistentData::HasAnyUserEffectWithReloadRequest()
 	return false;
 }
 
-std::vector<PostEffectUserObject*> PostPersistentData::GetAllConnectedUserEffects()
+std::vector<EffectShaderUserObject*> PostPersistentData::GetAllConnectedUserEffects()
 {
-	std::vector<PostEffectUserObject*> userEffects;
+	std::vector<EffectShaderUserObject*> userEffects;
+	if (!UseUserEffects)
+		return userEffects;
+
 	for (int i = 0; i < UserEffects.GetCount(); ++i)
 	{
-		if (FBIS(UserEffects[i], PostEffectUserObject))
+		if (FBIS(UserEffects[i], EffectShaderUserObject))
 		{
-			PostEffectUserObject* userObject = FBCast<PostEffectUserObject>(UserEffects[i]);
+			EffectShaderUserObject* userObject = FBCast<EffectShaderUserObject>(UserEffects[i]);
 			if (userObject)
 			{
 				userEffects.push_back(userObject);
@@ -1821,7 +1823,7 @@ std::vector<PostEffectUserObject*> PostPersistentData::GetAllConnectedUserEffect
 	return userEffects;
 }
 
-void PostPersistentData::ProcessSiblingsOfUserEffect(std::vector<PostEffectUserObject*>& effectsOut, PostEffectUserObject* userEffectIn)
+void PostPersistentData::ProcessSiblingsOfUserEffect(std::vector<EffectShaderUserObject*>& effectsOut, EffectShaderUserObject* userEffectIn)
 {
 	if (!userEffectIn)
 		return;
@@ -1829,9 +1831,9 @@ void PostPersistentData::ProcessSiblingsOfUserEffect(std::vector<PostEffectUserO
 	for (int i=0; i<userEffectIn->GetDstCount(); ++i)
 	{
 		FBPlug* dstPlug = userEffectIn->GetDst(i);
-		if (dstPlug && FBIS(dstPlug, PostEffectUserObject))
+		if (FBIS(dstPlug, EffectShaderUserObject))
 		{
-			PostEffectUserObject* siblingEffect = FBCast<PostEffectUserObject>(dstPlug);
+			EffectShaderUserObject* siblingEffect = FBCast<EffectShaderUserObject>(dstPlug);
 			if (siblingEffect)
 			{
 				effectsOut.push_back(siblingEffect);
@@ -1841,19 +1843,22 @@ void PostPersistentData::ProcessSiblingsOfUserEffect(std::vector<PostEffectUserO
 	}
 }
 
-PostEffectBase* PostPersistentData::GetActiveUserEffect(const int index)
+PostEffectBufferShader* PostPersistentData::GetActiveUserEffectShader(const int index)
 {
+	if (!UseUserEffects)
+		return nullptr;
+
 	int count = 0;
 	for (int i = 0; i < UserEffects.GetCount(); ++i)
 	{
-		if (FBIS(UserEffects[i], PostEffectUserObject))
+		if (FBIS(UserEffects[i], EffectShaderUserObject))
 		{
-			PostEffectUserObject* UserObject = FBCast<PostEffectUserObject>(UserEffects[i]);
+			EffectShaderUserObject* UserObject = FBCast<EffectShaderUserObject>(UserEffects[i]);
 			if (UserObject && UserObject->Active)
 			{
 				if (count == index)
 				{
-					return UserObject->GetUserEffectPtr();
+					return UserObject->GetUserShaderPtr();
 				}
 				count += 1;
 			}
@@ -1862,14 +1867,17 @@ PostEffectBase* PostPersistentData::GetActiveUserEffect(const int index)
 	return nullptr;
 }
 
-PostEffectUserObject* PostPersistentData::GetActiveUserEffectObject(const int index)
+EffectShaderUserObject* PostPersistentData::GetActiveUserEffectObject(const int index)
 {
+	if (!UseUserEffects)
+		return nullptr;
+
 	int count = 0;
 	for (int i = 0; i < UserEffects.GetCount(); ++i)
 	{
-		if (FBIS(UserEffects[i], PostEffectUserObject))
+		if (FBIS(UserEffects[i], EffectShaderUserObject))
 		{
-			PostEffectUserObject* UserObject = FBCast<PostEffectUserObject>(UserEffects[i]);
+			EffectShaderUserObject* UserObject = FBCast<EffectShaderUserObject>(UserEffects[i]);
 			if (UserObject && UserObject->Active)
 			{
 				if (count == index)

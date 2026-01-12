@@ -21,8 +21,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 // forward declaration
 class PostPersistentData;
-class PostEffectBase;
-class PostEffectUserObject;
+class PostEffectBufferShader;
+class EffectShaderUserObject;
 
 enum EBlurQuality
 {
@@ -278,6 +278,7 @@ public: // PROPERTIES
 	FBPropertyBool				GenerateMipMaps;
 	FBPropertyAction			ResetToDefault;
 
+	FBPropertyAnimatableBool	UseUserEffects;
 	FBPropertyListObject		UserEffects; //!< connected custom effects to use in the processing chain
 
 	FBPropertyBool				AutoClipFromHUD;
@@ -537,10 +538,6 @@ public:
 	bool IsExternalReloadRequested() const;
 	void DoReloadShaders();
 
-
-
-	void ClearReloadFlags();
-
 	void SetPreviewTextureId(unsigned int id, double ratio, 
 		unsigned int w, unsigned int h, int uncomporessSize, 
 		int compressedSize, int compressionCode, double updateTime);
@@ -561,11 +558,11 @@ public:
 	int GetGlobalMaskIndex() const;
 
 	int GetNumberOfActiveUserEffects();
-	PostEffectBase* GetActiveUserEffect(const int index);
-	PostEffectUserObject* GetActiveUserEffectObject(const int index);
+	PostEffectBufferShader* GetActiveUserEffectShader(const int index);
+	EffectShaderUserObject* GetActiveUserEffectObject(const int index);
 	bool HasAnyUserEffectWithReloadRequest();
 
-	std::vector<PostEffectUserObject*> GetAllConnectedUserEffects();
+	std::vector<EffectShaderUserObject*> GetAllConnectedUserEffects();
 
 protected:
 
@@ -587,7 +584,7 @@ protected:
 
 	void ComputePointInFront(FBVector3d &v);
 
-	void ProcessSiblingsOfUserEffect(std::vector<PostEffectUserObject*>& effectsOut, PostEffectUserObject* userEffectIn);
+	void ProcessSiblingsOfUserEffect(std::vector<EffectShaderUserObject*>& effectsOut, EffectShaderUserObject* userEffectIn);
 };
 
 #endif /* __POST_PROCESSING_DATA_H__ */

@@ -55,6 +55,16 @@ commonNames = ["Active", "Use Camera Object", "Camera", "SSAO", "Motion Blur", "
 
 gEffectNames = []
 
+class MyView (FBView):
+
+    #def Refresh(self, pNow=False):
+    #    print ("Refresh")
+    
+    def ViewExpose(self):
+        print ("view draw")    
+
+
+
 def UpdateDataList():
     
     itemIndex = lListObjects.ItemIndex
@@ -139,7 +149,7 @@ def CreateEffectUI(lyt, names):
     x = FBAddRegionParam(regionx,FBAttachType.kFBAttachLeft,"")
     y = FBAddRegionParam(5,FBAttachType.kFBAttachTop,"")
     w = FBAddRegionParam(regionw,FBAttachType.kFBAttachNone,"")
-    h = FBAddRegionParam(-5,FBAttachType.kFBAttachBottom,"")
+    h = FBAddRegionParam(-200,FBAttachType.kFBAttachBottom,"")
     
     main = FBVBoxLayout()
     lyt.AddRegion("main","main", x, y, w, h)
@@ -161,6 +171,19 @@ def CreateEffectUI(lyt, names):
         height += 30
 
     return [props, height]
+    
+def AddView(lyt):
+    
+    # Create Main region frame:
+    x = FBAddRegionParam(regionx,FBAttachType.kFBAttachLeft,"")
+    y = FBAddRegionParam(-200,FBAttachType.kFBAttachBottom,"")
+    w = FBAddRegionParam(regionw,FBAttachType.kFBAttachNone,"")
+    h = FBAddRegionParam(-5,FBAttachType.kFBAttachBottom,"")
+        
+    view = MyView()
+    lyt.AddRegion("view","view", x, y, w, h)
+    lyt.SetControl("view",view)
+        
 
 def CloseCurrentDataUI():
     
@@ -546,6 +569,8 @@ def PopulateTool(mainLyt):
         
     propsCommon, height = CreateEffectUI(lLayoutCommon, commonNames)
     gEffectHeight.append(height)
+    
+    AddView(lLayoutCommon)
     
     layouts = [lLayoutSSAO, lLayoutMotionBlur, lLayoutDOF, lLayoutColor, lLayoutLensFlare, lLayoutDisplacement, lLayoutFishEye, lLayoutFilmGrain, lLayoutVignetting]
     gEffectProps = []

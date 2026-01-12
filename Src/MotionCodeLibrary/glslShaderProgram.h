@@ -36,23 +36,6 @@ struct StringViewEqual {
 ///
 class GLSLShaderProgram
 {
-	/// vertex shader handle
-	GLhandleARB     vertex{ 0 };
-
-	/// fragment handle
-	GLhandleARB     fragment{ 0 };
-
-	/// v & f
-	GLhandleARB     programObj{ 0 };
-
-	/// shader header text (defines)
-	char          mHeaderText[256]{ 0 };
-
-	static std::unordered_map<std::string, std::string, StringViewHash, StringViewEqual>	g_TextInsertions;
-
-  bool LoadShader( GLhandleARB shader, FILE *file, const char* debugName );
-  bool LoadLog( GLhandleARB object, const char* debugName ) const;
-
 public:
 
 	static bool PRINT_WARNINGS;
@@ -128,19 +111,32 @@ bool	LoadShaders( GLhandleARB	_vertex,	const char* fragment_file );
 		bindTexture(GL_TEXTURE_RECTANGLE_ARB, texname, texid, texunit);
 	}
 
-	GLhandleARB		GetVertexShader() const {
-		return vertex;
-	}
-	GLhandleARB		GetFragmentShader() const {
-		return fragment;
-	}
-	GLhandleARB		GetProgramObj() const {
-		return programObj;
-	}
+	GLhandleARB		GetVertexShader() const noexcept { return vertex; }
+	GLhandleARB		GetFragmentShader() const noexcept { return fragment; }
+	GLhandleARB		GetProgramObj() const noexcept { return programObj; }
 
-	bool IsValid() const {
-		return (programObj != 0);
-	}
+	bool IsValid() const noexcept { return (programObj != 0); }
+
+protected:
+	/// vertex shader handle
+	GLhandleARB     vertex{ 0 };
+
+	/// fragment handle
+	GLhandleARB     fragment{ 0 };
+
+	/// v & f
+	GLhandleARB     programObj{ 0 };
+
+	/// shader header text (defines)
+	char          mHeaderText[256]{ 0 };
+
+	static std::unordered_map<std::string, std::string, StringViewHash, StringViewEqual>	g_TextInsertions;
+
+	bool LoadShader(GLhandleARB shader, FILE* file, bool isFragmentShader, const char* debugName);
+	bool LoadLog(GLhandleARB object, const char* debugName) const;
+	 
+	virtual void OnShaderCodeReadyToCompile(std::string& shaderCodeInOut, bool isFragmentShader) const {}
+
 };
 
 #endif // GLSLSHADER_H_INCLUDED

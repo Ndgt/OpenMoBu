@@ -1,9 +1,9 @@
 
 #pragma once
 
-/** \file posteffect_userobject.h
+/** \file posteffect_shader_userobject.h
 
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2026
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -13,8 +13,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //--- SDK include
 #include <fbsdk/fbsdk.h>
 #include "postprocessing_helper.h"
+#include "posteffect_shader.h"
 
-#include "posteffectbase.h"
 #include "glslShaderProgram.h"
 #include <string>
 #include <unordered_map>
@@ -107,7 +107,7 @@ public:
 	virtual int GetNumberOfPasses() const override;
 
 	//! initialize a specific path for drawing
-	virtual bool OnRenderPassBegin(const int pass, PostEffectRenderContext& renderContext) override;
+	virtual bool OnRenderPassBegin(const int pass, PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext) override;
 
 protected:
 	friend class EffectShaderUserObject;
@@ -156,9 +156,6 @@ public:
 
 	virtual bool PlugNotify(FBConnectionAction pAction, FBPlug* pThis, int pIndex, FBPlug* pPlug, FBConnectionType pConnectionType, FBPlug* pNewPlug) override;
 
-    
-	void CopyValues(EffectShaderUserObject* pOther);
-
 public: // PROPERTIES
 
 	FBPropertyInt				UniqueClassId;
@@ -184,6 +181,9 @@ public: // PROPERTIES
 	FBPropertyBaseEnum<EMaskingChannel>	MaskingChannel;
 	
 	FBPropertyInt				NumberOfPasses; //!< define in how many passes the shader should be executed (global variable iPass)
+
+	// compile fragment shader with a ShaderToy compatibility
+	FBPropertyBool				UseShaderToyCompatibility;
 
 public:
 

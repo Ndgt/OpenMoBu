@@ -13,8 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postprocessing_manip.h"
 #include "postprocessingmanager.h"
 #include <fbsdk/fbsdk-opengl.h>
-#include "posteffectbase.h"
-#include "posteffectchain.h"
+#include "posteffect_chain.h"
 
 #include <imgui.h>
 #include <imnodes.h>
@@ -73,7 +72,7 @@ struct PostGraphNode
 
 public:
 
-	PostGraphNode(const PostEffectBase* effect)
+	PostGraphNode(const PostEffectBufferShader* effect)
 		: m_effect(effect)
 	{}
 
@@ -98,7 +97,7 @@ public:
 	int attrOut = 0;
 
 private:
-	const PostEffectBase* m_effect;
+	const PostEffectBufferShader* m_effect;
 
 };
 

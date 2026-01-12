@@ -1,7 +1,7 @@
 
 /**	\file	posteffectshader_mix.cxx
 
-Sergei <Neill3d> Solokhin 2018-2025
+Sergei <Neill3d> Solokhin 2018-2026
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -11,7 +11,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //--- Class declaration
 #include "posteffectshader_mix.h"
 #include "postpersistentdata.h"
-#include "shaderpropertywriter.h"
+#include "shaderproperty_writer.h"
 #include "mobu_logging.h"
 #include <hashUtils.h>
 

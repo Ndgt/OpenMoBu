@@ -3,13 +3,13 @@
 
 // posteffectshader_lineardepth
 /*
-Sergei <Neill3d> Solokhin 2018-2025
+Sergei <Neill3d> Solokhin 2018-2026
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "posteffectsingleshader.h"
+#include "posteffect_shader.h"
 
 // forward
 class PostEffectShaderLinearDepth;
@@ -17,7 +17,7 @@ class PostEffectShaderLinearDepth;
 /// <summary>
 /// effect with once shader - linear depth extraction
 /// </summary>
-using PostEffectLinearDepth = PostEffectSingleShader<PostEffectShaderLinearDepth>;
+//using PostEffectLinearDepth = PostEffectSingleShader<PostEffectShaderLinearDepth>;
 
 
 /// <summary>
