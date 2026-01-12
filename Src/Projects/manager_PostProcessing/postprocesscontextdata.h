@@ -3,7 +3,7 @@
 
 /** \file   PostProcessContextData.h
 
-Sergei <Neill3d> Solokhin 2022-2025
+Sergei <Neill3d> Solokhin 2022-2026
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -24,10 +24,11 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "Framebuffer.h"
 
 #include "postprocessing_fonts.h"
-#include "posteffectbuffers.h"
-#include "posteffectchain.h"
+#include "posteffect_buffers.h"
+#include "posteffect_chain.h"
+#include "posteffect_context.h"
 #include "standardeffectcollection.h"
-#include "shaderpropertystorage.h"
+#include "shaderproperty_storage.h"
 
 /// <summary>
 /// All post process render data for an ogl context
@@ -47,7 +48,7 @@ public:
 	int				mEvaluatePaneCount{ 0 }; // @see mEvaluatePanes
 	int				mRenderPaneCount{ 0 }; // @see mRenderPanes
 	
-	bool			mSchematicView[MAX_PANE_COUNT];
+	int				mSchematicViewIndex{ -1 }; // -1 in case there is no pane with schematic view
 	bool			mVideoRendering = false;
 	std::atomic<bool> isReadyToEvaluate{ false };
 	std::atomic<bool> isNeedToResetPaneSettings{ false };
@@ -130,10 +131,10 @@ public:
 private:
     bool EmptyGLErrorStack();
 
-	bool PrepPaneSettings();
+	bool PrepPersistanceDataForEachPane();
 
 	// manager shaders
-	bool	LoadShaders();
+	bool	LoadSimpleBlitShader();
 	const bool CheckShadersPath(const char* path) const;
 	void	FreeShaders();
 

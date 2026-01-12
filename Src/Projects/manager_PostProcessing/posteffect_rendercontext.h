@@ -1,17 +1,17 @@
 
 #pragma once
 
-// posteffectrendercontext
+// posteffect_rendercontext.h
 /*
-Sergei <Neill3d> Solokhin 2025
+Sergei <Neill3d> Solokhin 2025-2026
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
 #include "shaderproperty.h"
-#include "shaderpropertyscheme.h"
-#include "shaderpropertystorage.h"
+#include "shaderproperty_scheme.h"
+#include "shaderproperty_storage.h"
 #include <unordered_map>
 
 // forward

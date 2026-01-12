@@ -1,8 +1,8 @@
 #pragma once
 
-// postprocessing_effectChain
+// standardeffect_collection.h
 /*
-Sergei <Neill3d> Solokhin 2018-2025
+Sergei <Neill3d> Solokhin 2018-2026
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -13,7 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "GL/glew.h"
 
-#include "posteffectbase.h"
+#include "posteffect_shader.h"
 
 #include "posteffectshader_downscale.h"
 #include "posteffectshader_lineardepth.h"
@@ -26,6 +26,20 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <memory>
 #include <bitset>
 
+enum class BuildInEffect : uint8_t
+{
+	FISHEYE,
+	COLOR,
+	VIGNETTE,
+	FILMGRAIN,
+	LENSFLARE,
+	SSAO,
+	DOF,
+	DISPLACEMENT,
+	MOTIONBLUR,
+	COUNT
+};
+
 /**
 * Build-in effects collection
 * initialized per render context and shared across several view panes (effects chains)
@@ -34,31 +48,33 @@ class StandardEffectCollection
 {
 public:
 
-	PostEffectBase* GetFishEyeEffect() { return mFishEye.get(); }
-	const PostEffectBase* GetFishEyeEffect() const { return mFishEye.get(); }
-	PostEffectBase* GetColorEffect() { return mColor.get(); }
-	const PostEffectBase* GetColorEffect() const { return mColor.get(); }
-	PostEffectBase* GetVignettingEffect() { return mVignetting.get(); }
-	const PostEffectBase* GetVignettingEffect() const { return mVignetting.get(); }
-	PostEffectBase* GetFilmGrainEffect() { return mFilmGrain.get(); }
-	const PostEffectBase* GetFilmGrainEffect() const { return mFilmGrain.get(); }
-	PostEffectBase* GetLensFlareEffect() { return mLensFlare.get(); }
-	const PostEffectBase* GetLensFlareEffect() const { return mLensFlare.get(); }
-	PostEffectBase* GetSSAOEffect() { return mSSAO.get(); }
-	const PostEffectBase* GetSSAOEffect() const { return mSSAO.get(); }
-	PostEffectBase* GetDOFEffect() { return mDOF.get(); }
-	const PostEffectBase* GetDOFEffect() const { return mDOF.get(); }
-	PostEffectBase* GetDisplacementEffect() { return mDisplacement.get(); }
-	const PostEffectBase* GetDisplacementEffect() const { return mDisplacement.get(); }
-	PostEffectBase* GetMotionBlurEffect() { return mMotionBlur.get(); }
-	const PostEffectBase* GetMotionBlurEffect() const { return mMotionBlur.get(); }
+	PostEffectBufferShader* GetFishEyeEffect() { return mFishEye.get(); }
+	const PostEffectBufferShader* GetFishEyeEffect() const { return mFishEye.get(); }
+	PostEffectBufferShader* GetColorEffect() { return mColor.get(); }
+	const PostEffectBufferShader* GetColorEffect() const { return mColor.get(); }
+	PostEffectBufferShader* GetVignettingEffect() { return mVignetting.get(); }
+	const PostEffectBufferShader* GetVignettingEffect() const { return mVignetting.get(); }
+	PostEffectBufferShader* GetFilmGrainEffect() { return mFilmGrain.get(); }
+	const PostEffectBufferShader* GetFilmGrainEffect() const { return mFilmGrain.get(); }
+	PostEffectBufferShader* GetLensFlareEffect() { return mLensFlare.get(); }
+	const PostEffectBufferShader* GetLensFlareEffect() const { return mLensFlare.get(); }
+	PostEffectBufferShader* GetSSAOEffect() { return mSSAO.get(); }
+	const PostEffectBufferShader* GetSSAOEffect() const { return mSSAO.get(); }
+	PostEffectBufferShader* GetDOFEffect() { return mDOF.get(); }
+	const PostEffectBufferShader* GetDOFEffect() const { return mDOF.get(); }
+	PostEffectBufferShader* GetDisplacementEffect() { return mDisplacement.get(); }
+	const PostEffectBufferShader* GetDisplacementEffect() const { return mDisplacement.get(); }
+	PostEffectBufferShader* GetMotionBlurEffect() { return mMotionBlur.get(); }
+	const PostEffectBufferShader* GetMotionBlurEffect() const { return mMotionBlur.get(); }
 
-	PostEffectBase* ShaderFactory(const BuildInEffect effectType, const char* shadersLocation, bool immediatelyLoad = true);
+	PostEffectBufferShader* ShaderFactory(const BuildInEffect effectType, FBComponent* pOwner, const char* shadersLocation, bool immediatelyLoad = true);
 
-	const PostEffectBlurLinearDepth* GetEffectBlurLinearDepth() const { return mEffectBlur.get(); }
-	PostEffectBlurLinearDepth* GetEffectBlurLinearDepth() { return mEffectBlur.get(); }
-	const PostEffectMix* GetEffectMix() const { return mEffectMix.get(); }
-	PostEffectMix* GetEffectMix() { return mEffectMix.get(); }
+	const EffectShaderBlurLinearDepth* GetEffectBlurLinearDepth() const { return mEffectBlur.get(); }
+	EffectShaderBlurLinearDepth* GetEffectBlurLinearDepth() { return mEffectBlur.get(); }
+	const EffectShaderMix* GetEffectMix() const { return mEffectMix.get(); }
+	EffectShaderMix* GetEffectMix() { return mEffectMix.get(); }
+	const PostEffectShaderLinearDepth* GetShaderLinearDepth() const { return mEffectDepthLinearize.get(); }
+	PostEffectShaderLinearDepth* GetShaderLinearDepth() { return mEffectDepthLinearize.get(); }
 
 	void ChangeContext();
 	// check reload of shaders was requested, then reload them
@@ -73,24 +89,24 @@ public:
 	void FreeShaders();
 
 	// build-in effects
-	std::unique_ptr<PostEffectBase>		mFishEye;
-	std::unique_ptr<PostEffectBase>		mColor;
-	std::unique_ptr<PostEffectBase>		mVignetting;
-	std::unique_ptr<PostEffectBase>		mFilmGrain;
-	std::unique_ptr<PostEffectBase>		mLensFlare;
-	std::unique_ptr<PostEffectBase>		mSSAO;
-	std::unique_ptr<PostEffectBase>		mDOF;
-	std::unique_ptr<PostEffectBase>		mDisplacement;
-	std::unique_ptr<PostEffectBase>		mMotionBlur;
+	std::unique_ptr<PostEffectBufferShader>		mFishEye;
+	std::unique_ptr<PostEffectBufferShader>		mColor;
+	std::unique_ptr<PostEffectBufferShader>		mVignetting;
+	std::unique_ptr<PostEffectBufferShader>		mFilmGrain;
+	std::unique_ptr<PostEffectBufferShader>		mLensFlare;
+	std::unique_ptr<PostEffectBufferShader>		mSSAO;
+	std::unique_ptr<PostEffectBufferShader>		mDOF;
+	std::unique_ptr<PostEffectBufferShader>		mDisplacement;
+	std::unique_ptr<PostEffectBufferShader>		mMotionBlur;
 
 	// shared shaders
 
-	std::unique_ptr<PostEffectLinearDepth>		mEffectDepthLinearize;	//!< linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
-	std::unique_ptr<PostEffectBlurLinearDepth>	mEffectBlur;		//!< bilateral blur effect, for SSAO
+	std::unique_ptr<PostEffectShaderLinearDepth>		mEffectDepthLinearize;	//!< linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
+	std::unique_ptr<EffectShaderBlurLinearDepth>		mEffectBlur;		//!< bilateral blur effect, for SSAO
 	//std::unique_ptr<GLSLShaderProgram>		mShaderImageBlur;	//!< for masking
-	std::unique_ptr<PostEffectBilateralBlur>	mEffectBilateralBlur; //!< for masking
-	std::unique_ptr<PostEffectMix>				mEffectMix;			//!< multiplication result of two inputs, (for SSAO)
-	std::unique_ptr<PostEffectDownscale>		mEffectDownscale; // effect for downscaling the preview image (send to client)
+	std::unique_ptr<PostEffectShaderBilateralBlur>		mEffectBilateralBlur; //!< for masking
+	std::unique_ptr<EffectShaderMix>					mEffectMix;			//!< multiplication result of two inputs, (for SSAO)
+	std::unique_ptr<PostEffectShaderDownscale>			mEffectDownscale; // effect for downscaling the preview image (send to client)
 
 	std::unique_ptr<GLSLShaderProgram>			mShaderSceneMasked; //!< render models into mask with some additional filtering
 
