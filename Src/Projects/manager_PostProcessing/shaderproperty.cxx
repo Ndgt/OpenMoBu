@@ -12,7 +12,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "hashUtils.h"
 #include "mobu_logging.h"
 #include "posteffect_shader_userobject.h"
-#include "posteffect_contextmobu.h"
+#include "posteffectcontextmobu.h"
 
 ShaderProperty::ShaderProperty(const ShaderProperty& other)
 {

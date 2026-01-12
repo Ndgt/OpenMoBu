@@ -3,13 +3,13 @@
 
 // posteffectshader_bilateral_blur
 /*
-Sergei <Neill3d> Solokhin 2018-2026
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "posteffect_shader.h"
+#include "posteffectsingleshader.h"
 #include "posteffect_shader_userobject.h"
 
 // forward
@@ -18,7 +18,7 @@ class PostEffectShaderBilateralBlur;
 /// <summary>
 /// effect with once shader - bilateral blur
 /// </summary>
-//using PostEffectBilateralBlur = PostEffectSingleShader<PostEffectShaderBilateralBlur>;
+using PostEffectBilateralBlur = PostEffectSingleShader<PostEffectShaderBilateralBlur>;
 
 /// <summary>
 /// one single fragment shader that we do one number of passes to process the input

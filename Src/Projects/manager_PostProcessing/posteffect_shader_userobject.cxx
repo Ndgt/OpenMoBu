@@ -1,7 +1,7 @@
 
-/** \file posteffect_shader_userobject.cxx
+/** \file posteffect_userobject.cxx
 
-Sergei <Neill3d> Solokhin 2018-2026
+Sergei <Neill3d> Solokhin 2018-2024
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -10,6 +10,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 // Class declaration
 #include "posteffect_shader_userobject.h"
+#include "posteffect_userobject.h"
 #include "postprocessing_ini.h"
 #include <vector>
 #include <limits>
@@ -20,7 +21,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "mobu_logging.h"
 
 #include "postpersistentdata.h"
-#include "posteffect_buffers.h"
+#include "posteffectbuffers.h"
 #include <hashUtils.h>
 
 // custom assets inserting
@@ -32,7 +33,7 @@ FBClassImplementation(EffectShaderUserObject);
 FBUserObjectImplement(EffectShaderUserObject,
                         "User Object used to store a persistance data for one effect shader.",
 						"cam_switcher_toggle.png");                                          //Register UserObject class
-PostEffectFBElementClassImplementation(EffectShaderUserObject, "User Effect Shader", "cam_switcher_toggle.png");                  //Register to the asset system
+PostEffectFBElementClassImplementation(EffectShaderUserObject, "Effect Shader", "cam_switcher_toggle.png");                  //Register to the asset system
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -108,7 +109,6 @@ bool EffectShaderUserObject::FBCreate()
 
 	FBPropertyPublish(this, VertexFile, "Vertex File", nullptr, nullptr);
 	FBPropertyPublish(this, FragmentFile, "Shader File", nullptr, nullptr);
-	FBPropertyPublish(this, UseShaderToyCompatibility, "ShaderToy Compatibility", nullptr, nullptr);
 	FBPropertyPublish(this, ReloadShaders, "Reload Shader", nullptr, ActionReloadShaders);
 	FBPropertyPublish(this, OpenFolder, "Open Folder", nullptr, ActionOpenFolder);
 	FBPropertyPublish(this, ExportShaderScheme, "Export Shader Scheme", nullptr, ActionExportShaderScheme);
@@ -122,7 +122,6 @@ bool EffectShaderUserObject::FBCreate()
 
 	VertexFile = UserBufferShader::DEFAULT_VERTEX_SHADER_FILE;
 	FragmentFile = UserBufferShader::DEFAULT_FRAGMENT_SHADER_FILE;
-	UseShaderToyCompatibility = false;
 	NumberOfPasses = 1;
 	NumberOfPasses.SetMinMax(1.0, 12.0, true, true);
 
@@ -191,6 +190,13 @@ bool EffectShaderUserObject::RequestShadersReload()
 				persistentData->RequestShadersReload(isExternal, propagateToCustomEffects);
 			}
 		}
+		else if (FBIS(dstPlug, PostEffectUserObject))
+		{
+			if (PostEffectUserObject* effectObj = static_cast<PostEffectUserObject*>(dstPlug))
+			{
+				effectObj->RequestShadersReload();
+			}
+		}
 		else if (FBIS(dstPlug, EffectShaderUserObject))
 		{
 			if (EffectShaderUserObject* effectShaderObj = static_cast<EffectShaderUserObject*>(dstPlug))
@@ -242,7 +248,7 @@ bool EffectShaderUserObject::DoReloadShaders()
 
 	// NOTE: prep uniforms when load is succesfull
 	constexpr int variationIndex = 0;
-	if (!mUserShader->Load(variationIndex, vertexPath, fragmentPath, UseShaderToyCompatibility))
+	if (!mUserShader->Load(variationIndex, vertexPath, fragmentPath))
 	{
 		LOGE("[%s] Failed to load shaders for %s, %s!\n", LongName.AsString(), vertexPath, fragmentPath);
 		return false;
@@ -257,6 +263,13 @@ bool EffectShaderUserObject::DoReloadShaders()
 			if (EffectShaderUserObject* effectShaderObj = static_cast<EffectShaderUserObject*>(srcPlug))
 			{
 				effectShaderObj->DoReloadShaders();
+			}
+		}
+		else if (FBIS(srcPlug, PostEffectUserObject))
+		{
+			if (PostEffectUserObject* effectObj = static_cast<PostEffectUserObject*>(srcPlug))
+			{
+				effectObj->DoReloadShaders();
 			}
 		}
 	}
@@ -552,7 +565,7 @@ int UserBufferShader::GetNumberOfPasses() const
 	return (mUserObject) ? mUserObject->NumberOfPasses : 1;
 }
 //! initialize a specific path for drawing
-bool UserBufferShader::OnRenderPassBegin(const int pass, PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext)
+bool UserBufferShader::OnRenderPassBegin(const int pass, PostEffectRenderContext& renderContext)
 {
 	// TODO: define iPass value for the shader
 	

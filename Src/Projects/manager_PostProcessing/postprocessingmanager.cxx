@@ -1,7 +1,7 @@
 
 /** \file   postprocessing_manager.cxx
 
-	Sergei <Neill3d> Solokhin 2018-2026
+	Sergei <Neill3d> Solokhin 2018
 
 	GitHub page - https://github.com/Neill3d/OpenMoBu
 	Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -12,7 +12,7 @@
 #include <Windows.h>
 #include <filesystem>
 #include "postprocessingmanager.h"
-#include "posteffect_contextmobu.h"
+#include "posteffectcontextmobu.h"
 #include "postprocessing_helper.h"
 
 //--- Registration defines
