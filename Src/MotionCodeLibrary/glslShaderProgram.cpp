@@ -63,7 +63,7 @@ bool GLSLShaderProgram::ReCompileShaders( const char* vertex_file, const char* f
 		}
 		
 		fragment = glCreateShaderObjectARB( GL_FRAGMENT_SHADER_ARB );
-		if (!LoadShader( fragment, fp, fragment_file ) ) {
+		if (!LoadShader( fragment, fp, true, fragment_file ) ) {
 			return false;
 		}
 
@@ -106,7 +106,7 @@ bool GLSLShaderProgram::LoadShaders( const char* vertex_file, const char* fragme
 		if (FILE* fp = readVertex.Get())
 		{
 			vertex = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
-			LoadShader(vertex, fp, vertex_file);
+			LoadShader(vertex, fp, false, vertex_file);
 		}
 	}
 
@@ -116,7 +116,7 @@ bool GLSLShaderProgram::LoadShaders( const char* vertex_file, const char* fragme
 		if (FILE* fp = readFragment.Get())
 		{
 			fragment = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
-			LoadShader(fragment, fp, fragment_file);
+			LoadShader(fragment, fp, true, fragment_file);
 		}
 	}
 
@@ -171,7 +171,7 @@ bool GLSLShaderProgram::LoadShaders( GLhandleARB	_vertex, const char* fragment_f
 		if (FILE* fp = readFragment.Get())
 		{
 			fragment = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
-			LoadShader(fragment, fp, fragment_file);
+			LoadShader(fragment, fp, true, fragment_file);
 		}
 	}
 
@@ -268,7 +268,7 @@ void ProcessTextWithInsertions(std::string& inputText, const std::unordered_map<
 	inputText = outputStream.str();
 }
 
-bool GLSLShaderProgram::LoadShader( GLhandleARB shader, FILE *file, const char* debugName )
+bool GLSLShaderProgram::LoadShader( GLhandleARB shader, FILE *file, bool isFragmentShader, const char* debugName )
 {
 	if (!file)
 	{
@@ -316,6 +316,8 @@ bool GLSLShaderProgram::LoadShader( GLhandleARB shader, FILE *file, const char* 
 
 		ProcessTextWithInsertions(textBuffer, g_TextInsertions);
 	}
+
+	OnShaderCodeReadyToCompile(textBuffer, isFragmentShader);
 
 	//
 	// pass the code as the shader source

@@ -11,8 +11,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "posteffect_rendercontext.h"
 #include "mobu_logging.h"
-#include "posteffectbase.h"
-
+#include "hashUtils.h"
 
 void PostEffectRenderContext::OverrideUniform(const ShaderProperty* shaderProperty, float valueIn)
 {

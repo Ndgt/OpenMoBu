@@ -1,7 +1,7 @@
 
 /**	\file	postprocessing_effect.cxx
 
-Sergei <Neill3d> Solokhin 2018-2025
+Sergei <Neill3d> Solokhin 2018-2026
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -10,18 +10,17 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Class declaration
 #include "standardeffectcollection.h"
-#include "posteffectssao.h"
-#include "posteffectdisplacement.h"
-#include "posteffectmotionblur.h"
-#include "posteffectlensflare.h"
-#include "posteffectcolor.h"
-#include "posteffectdof.h"
-#include "posteffectfilmgrain.h"
-#include "posteffectfisheye.h"
-#include "posteffectvignetting.h"
+#include "posteffectshader_ssao.h"
+#include "posteffectshader_displacement.h"
+#include "posteffectshader_motionblur.h"
+#include "posteffectshader_lensflare.h"
+#include "posteffectshader_color.h"
+#include "posteffectshader_dof.h"
+#include "posteffectshader_filmgrain.h"
+#include "posteffectshader_fisheye.h"
+#include "posteffectshader_vignetting.h"
 #include "postprocessing_helper.h"
 #include "fxmaskingshader.h"
-#include "posteffectbase.h"
 #include "posteffectshader_bilateral_blur.h"
 #include "postpersistentdata.h"
 
@@ -110,38 +109,38 @@ bool StandardEffectCollection::IsOk() const
 	return true;
 }
 
-PostEffectBase* StandardEffectCollection::ShaderFactory(const BuildInEffect effectType, const char *shadersLocation, bool immediatelyLoad)
+PostEffectBufferShader* StandardEffectCollection::ShaderFactory(const BuildInEffect effectType, FBComponent* pOwner, const char *shadersLocation, bool immediatelyLoad)
 {
-	PostEffectBase* newEffect = nullptr;
+	PostEffectBufferShader* newEffect = nullptr;
 
 	switch (effectType)
 	{
 	case BuildInEffect::FISHEYE:
-		newEffect = new PostEffectFishEye();
+		newEffect = new EffectShaderFishEye(pOwner);
 		break;
 	case BuildInEffect::COLOR:
-		newEffect = new PostEffectColor();
+		newEffect = new EffectShaderColor(pOwner);
 		break;
 	case BuildInEffect::VIGNETTE:
-		newEffect = new PostEffectVignetting();
+		newEffect = new EffectShaderVignetting(pOwner);
 		break;
 	case BuildInEffect::FILMGRAIN:
-		newEffect = new PostEffectFilmGrain();
+		newEffect = new EffectShaderFilmGrain(pOwner);
 		break;
 	case BuildInEffect::LENSFLARE:
-		newEffect = new PostEffectLensFlare();
+		newEffect = new EffectShaderLensFlare(pOwner);
 		break;
 	case BuildInEffect::SSAO:
-		newEffect = new PostEffectSSAO();
+		newEffect = new EffectShaderSSAO(pOwner);
 		break;
 	case BuildInEffect::DOF:
-		newEffect = new PostEffectDOF();
+		newEffect = new EffectShaderDOF(pOwner);
 		break;
 	case BuildInEffect::DISPLACEMENT:
-		newEffect = new PostEffectDisplacement();
+		newEffect = new EffectShaderDisplacement(pOwner);
 		break;
 	case BuildInEffect::MOTIONBLUR:
-		newEffect = new PostEffectMotionBlur();
+		newEffect = new EffectShaderMotionBlur(pOwner);
 		break;
 	}
 
@@ -196,7 +195,7 @@ bool StandardEffectCollection::CheckShadersPath(const char* path)
 bool StandardEffectCollection::LoadShaders()
 {
 	FreeShaders();
-
+	
 	constexpr int PATH_LENGTH = 260;
 	char shadersPath[PATH_LENGTH];
 	if (!FindEffectLocation(CheckShadersPath, shadersPath, PATH_LENGTH))
@@ -207,15 +206,16 @@ bool StandardEffectCollection::LoadShaders()
 	
 	LOGE("[PostProcessing] Shaders Location - %s\n", shadersPath);
 
-	mFishEye.reset(ShaderFactory(BuildInEffect::FISHEYE, shadersPath));
-	mColor.reset(ShaderFactory(BuildInEffect::COLOR, shadersPath));
-	mVignetting.reset(ShaderFactory(BuildInEffect::VIGNETTE, shadersPath));
-	mFilmGrain.reset(ShaderFactory(BuildInEffect::FILMGRAIN, shadersPath));
-	mLensFlare.reset(ShaderFactory(BuildInEffect::LENSFLARE, shadersPath));
-	mSSAO.reset(ShaderFactory(BuildInEffect::SSAO, shadersPath));
-	mDOF.reset(ShaderFactory(BuildInEffect::DOF, shadersPath));
-	mDisplacement.reset(ShaderFactory(BuildInEffect::DISPLACEMENT, shadersPath));
-	mMotionBlur.reset(ShaderFactory(BuildInEffect::MOTIONBLUR, shadersPath));
+	constexpr FBComponent* pOwner = nullptr;
+	mFishEye.reset(ShaderFactory(BuildInEffect::FISHEYE, pOwner, shadersPath));
+	mColor.reset(ShaderFactory(BuildInEffect::COLOR, pOwner, shadersPath));
+	mVignetting.reset(ShaderFactory(BuildInEffect::VIGNETTE, pOwner, shadersPath));
+	mFilmGrain.reset(ShaderFactory(BuildInEffect::FILMGRAIN, pOwner, shadersPath));
+	mLensFlare.reset(ShaderFactory(BuildInEffect::LENSFLARE, pOwner, shadersPath));
+	mSSAO.reset(ShaderFactory(BuildInEffect::SSAO, pOwner, shadersPath));
+	mDOF.reset(ShaderFactory(BuildInEffect::DOF, pOwner, shadersPath));
+	mDisplacement.reset(ShaderFactory(BuildInEffect::DISPLACEMENT, pOwner, shadersPath));
+	mMotionBlur.reset(ShaderFactory(BuildInEffect::MOTIONBLUR, pOwner, shadersPath));
 
 	// load shared shaders (blur, mix)
 
@@ -226,7 +226,7 @@ bool StandardEffectCollection::LoadShaders()
 		//
 		// DEPTH LINEARIZE
 
-		mEffectDepthLinearize.reset(new PostEffectLinearDepth());
+		mEffectDepthLinearize.reset(new PostEffectShaderLinearDepth());
 		if (!mEffectDepthLinearize->Load(shadersPath))
 		{
 			throw std::exception("failed to load and prepare depth linearize effect");
@@ -235,7 +235,7 @@ bool StandardEffectCollection::LoadShaders()
 		//
 		// BLUR (for SSAO)
 
-		mEffectBlur.reset(new PostEffectBlurLinearDepth());
+		mEffectBlur.reset(new EffectShaderBlurLinearDepth(pOwner));
 		if (!mEffectBlur->Load(shadersPath))
 		{
 			throw std::exception("failed to load and prepare SSAO blur effect");
@@ -244,7 +244,7 @@ bool StandardEffectCollection::LoadShaders()
 		//
 		// IMAGE BLUR, simple bilateral blur
 
-		mEffectBilateralBlur.reset(new PostEffectBilateralBlur());
+		mEffectBilateralBlur.reset(new PostEffectShaderBilateralBlur());
 		if (!mEffectBilateralBlur->Load(shadersPath))
 		{
 			throw std::exception("failed to load and prepare image blur effect");
@@ -253,7 +253,7 @@ bool StandardEffectCollection::LoadShaders()
 		//
 		// MIX
 
-		mEffectMix.reset(new PostEffectMix());
+		mEffectMix.reset(new EffectShaderMix());
 		if (!mEffectMix->Load(shadersPath))
 		{
 			throw std::exception("failed to load and prepare mix effect");
@@ -262,7 +262,7 @@ bool StandardEffectCollection::LoadShaders()
 		//
 		// DOWNSCALE
 
-		mEffectDownscale.reset(new PostEffectDownscale());
+		mEffectDownscale.reset(new PostEffectShaderDownscale());
 		if (!mEffectDownscale->Load(shadersPath))
 		{
 			throw std::exception("failed to load and prepare downscale effect");

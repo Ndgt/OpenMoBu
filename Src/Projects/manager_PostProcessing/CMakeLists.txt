@@ -81,45 +81,48 @@ set (SHADERS
 source_group("Shaders" FILES ${SHADERS})
 
 set (POSTEFFECTSCOMMON
-    posteffectbase.h
-    posteffectbase.cxx
-    posteffectcontext.h
-    posteffectcontextmobu.cpp
-    posteffectcontextmobu.h
-    posteffectbuffershader.h
-    posteffectbuffershader.cxx
-    posteffectsingleshader.h
+    posteffect_chain.h
+    posteffect_chain.cxx
+    posteffect_context.h
+    posteffect_contextmobu.cpp
+    posteffect_contextmobu.h
+    posteffect_buffers.h
+    posteffect_buffers.cxx
+    posteffect_shader.h
+    posteffect_shader.cxx
+    posteffect_rendercontext.h
+    posteffect_rendercontext.cxx
     shaderproperty.h
     shaderproperty.cxx
-    shaderpropertyscheme.h
-    shaderpropertyscheme.cxx
-    shaderpropertystorage.h
-    shaderpropertystorage.cxx
-    shaderpropertyvalue.h
-    shaderpropertyvalue.cpp
-    shaderpropertywriter.h
+    shaderproperty_scheme.h
+    shaderproperty_scheme.cxx
+    shaderproperty_storage.h
+    shaderproperty_storage.cxx
+    shaderproperty_value.h
+    shaderproperty_value.cpp
+    shaderproperty_writer.h
 )
 source_group("PostEffectsCommon" FILES ${POSTEFFECTSCOMMON})
 
 set (POSTEFFECTS
-    posteffectcolor.h
-    posteffectcolor.cxx
-    posteffectdisplacement.h
-    posteffectdisplacement.cpp
-    posteffectdof.h
-    posteffectdof.cxx
-    posteffectfilmgrain.h
-    posteffectfilmgrain.cxx
-    posteffectfisheye.h
-    posteffectfisheye.cxx
-    posteffectlensflare.h
-    posteffectlensflare.cpp
-    posteffectmotionblur.h
-    posteffectmotionblur.cpp
-    posteffectssao.h
-    posteffectssao.cpp
-    posteffectvignetting.h
-    posteffectvignetting.cxx
+    posteffectshader_color.h
+    posteffectshader_color.cxx
+    posteffectshader_displacement.h
+    posteffectshader_displacement.cpp
+    posteffectshader_dof.h
+    posteffectshader_dof.cxx
+    posteffectshader_filmgrain.h
+    posteffectshader_filmgrain.cxx
+    posteffectshader_fisheye.h
+    posteffectshader_fisheye.cxx
+    posteffectshader_lensflare.h
+    posteffectshader_lensflare.cpp
+    posteffectshader_motionblur.h
+    posteffectshader_motionblur.cpp
+    posteffectshader_ssao.h
+    posteffectshader_ssao.cpp
+    posteffectshader_vignetting.h
+    posteffectshader_vignetting.cxx
 )
 source_group("PostEffects" FILES ${POSTEFFECTS})
 

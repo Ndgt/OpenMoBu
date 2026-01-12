@@ -3,13 +3,13 @@
 
 // posteffectshader_downscale
 /*
-Sergei <Neill3d> Solokhin 2018-2025
+Sergei <Neill3d> Solokhin 2018-2026
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "posteffectsingleshader.h"
+#include "posteffect_shader.h"
 
 // forward
 class PostEffectShaderDownscale;
@@ -17,7 +17,7 @@ class PostEffectShaderDownscale;
 /// <summary>
 /// effect with once shader - bilateral blur
 /// </summary>
-using PostEffectDownscale = PostEffectSingleShader<PostEffectShaderDownscale>;
+//using PostEffectDownscale = PostEffectSingleShader<PostEffectShaderDownscale>;
 
 
 /// <summary>
