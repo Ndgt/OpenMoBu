@@ -3,13 +3,13 @@
 
 // posteffectshader_blur_lineardepth
 /*
-Sergei <Neill3d> Solokhin 2018-2026
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "posteffect_shader.h"
+#include "posteffectsingleshader.h"
 
 // forward
 class EffectShaderBlurLinearDepth;
@@ -17,7 +17,7 @@ class EffectShaderBlurLinearDepth;
 /// <summary>
 /// effect with once shader - bilateral blur
 /// </summary>
-//using PostEffectBlurLinearDepth = PostEffectSingleShader<EffectShaderBlurLinearDepth>;
+using PostEffectBlurLinearDepth = PostEffectSingleShader<EffectShaderBlurLinearDepth>;
 
 
 /// <summary>

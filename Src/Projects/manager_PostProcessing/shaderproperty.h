@@ -10,7 +10,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 */
 
 #include <GL/glew.h>
-#include "shaderproperty_value.h"
+#include "shaderpropertyvalue.h"
 #include <array>
 #include <string_view>
 #include <bitset>

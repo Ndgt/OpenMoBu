@@ -1,7 +1,7 @@
 
 /**	\file	posteffectshader_blur_lineardepth.cxx
 
-Sergei <Neill3d> Solokhin 2018-2026
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -10,7 +10,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Class declaration
 #include "posteffectshader_blur_lineardepth.h"
-#include "shaderproperty_writer.h"
+#include "shaderpropertywriter.h"
 #include "postpersistentdata.h"
 #include "mobu_logging.h"
 #include <hashUtils.h>

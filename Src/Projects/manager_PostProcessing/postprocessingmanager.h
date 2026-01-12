@@ -1,8 +1,9 @@
-#pragma once
+#ifndef _POST_PROCESSING_MANAGER_H__
+#define _POST_PROCESSING_MANAGER_H__
 
 /** \file   postprocessing_manager.h
 
-Sergei <Neill3d> Solokhin 2018-2026
+Sergei <Neill3d> Solokhin 2018
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -24,7 +25,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //#include "WGLFONT.h"
 #include "postprocessing_fonts.h"
 
-#include "posteffect_chain.h"
+#include "posteffectchain.h"
 #include "postprocesscontextdata.h"
 
 //--- Registration defines
@@ -145,3 +146,5 @@ public:
 
 	void PrepVideoClipsTimeWrap();
 };
+
+#endif /* _POST_PROCESSING_MANAGER_H__ */
